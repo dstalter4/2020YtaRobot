@@ -91,7 +91,7 @@ private:
     // TYPEDEFS
     typedef DriverStation::Alliance Alliance;
     typedef GenericHID::JoystickHand JoystickHand;
-    typedef TalonMotorGroup::MotorGroupControlMode MotorGroupControlMode;
+    typedef YtaTalon::MotorGroupControlMode MotorGroupControlMode;
     
     // ENUMS
     enum RobotMode
@@ -295,8 +295,8 @@ private:
     XboxController *                m_pControlXboxGameSir;                  // Option 3: Xbox-based controller (also works for Logitech Gamepad)
     
     // Motors
-    TalonMotorGroup *               m_pLeftDriveMotors;                     // Left drive motor control
-    TalonMotorGroup *               m_pRightDriveMotors;                    // Right drive motor control
+    TalonMotorGroup<TalonFX> *      m_pLeftDriveMotors;                     // Left drive motor control
+    TalonMotorGroup<TalonFX> *      m_pRightDriveMotors;                    // Right drive motor control
     
     // Spike Relays
     Relay *                         m_pLedsEnableRelay;                     // Controls whether the LEDs will light up at all
