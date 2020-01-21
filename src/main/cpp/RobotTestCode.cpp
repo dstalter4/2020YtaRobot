@@ -6,18 +6,37 @@
 /// Implementation of the YtaRobot test functions.  This keeps official stable
 /// robot code isolated.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
 // <none>
 
 // C INCLUDES
-// (none)
+#include "networktables/NetworkTable.h"         // for network tables
+#include "networktables/NetworkTableInstance.h" // for network table instance
 
 // C++ INCLUDES
 #include "RobotUtils.hpp"       // for DisplayMessage(), DisplayFormattedMessage()
 #include "YtaRobot.hpp"         // for robot class declaration
+
+
+static void LimelightTest()
+{
+    // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
+    std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    double targetOffsetAngle_Horizontal = table->GetNumber("tx",0.0);
+    double targetOffsetAngle_Vertical = table->GetNumber("ty",0.0);
+    double targetArea = table->GetNumber("ta",0.0);
+    double targetSkew = table->GetNumber("ts",0.0);
+
+    // Just to silence warnings
+    (void)targetOffsetAngle_Horizontal;
+    (void)targetOffsetAngle_Vertical;
+    (void)targetArea;
+    (void)targetSkew;
+}
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -47,7 +66,10 @@ void YtaRobot::TestPeriodic()
     CheckAndUpdateRobotMode(ROBOT_MODE_TEST);
 
     //AutonomousTestCode();
-    TeleopTestCode();
+    //TeleopTestCode();
+
+    LimelightTest();
+    return;
     
     // Example code using standard library delays and time tracking
     static std::chrono::time_point<std::chrono::high_resolution_clock> currentTime;
