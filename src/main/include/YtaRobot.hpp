@@ -37,6 +37,8 @@
 #include "frc/XboxController.h"                 // for creating Xbox controller objects
 #include "frc/smartdashboard/SendableChooser.h" // for using the smart dashboard sendable chooser functionality
 #include "frc/smartdashboard/SmartDashboard.h"  // for interacting with the smart dashboard
+#include "rev/ColorMatch.h"                     // for matching colors from the color sensor
+#include "rev/ColorSensorV3.h"                  // for interacting with the color sensor
 
 // C++ INCLUDES
 #include "RobotI2c.hpp"                         // for GetGyroData()
@@ -270,6 +272,9 @@ private:
     
     // Main sequence for vision processing
     void CameraSequence();
+
+    // Main sequence for interacting with the color sensor
+    void ColorSequence();
     
     // Test routines for trying out experimental code
     void AutonomousTestCode();
@@ -355,12 +360,24 @@ private:
     
     // I2C configuration
     std::thread                     m_I2cThread;
+    rev::ColorSensorV3 *            m_pColorSensor;
+    rev::ColorMatch *               m_pColorMatcher;
+    static constexpr frc::Color     BLUE_TARGET_COLOR                       = frc::Color(0.143, 0.427, 0.429);
+    static constexpr frc::Color     GREEN_TARGET_COLOR                      = frc::Color(0.197, 0.561, 0.240);
+    static constexpr frc::Color     RED_TARGET_COLOR                        = frc::Color(0.561, 0.232, 0.114);
+    static constexpr frc::Color     YELLOW_TARGET_COLOR                     = frc::Color(0.361, 0.524, 0.113);
     
     // Misc
     RobotMode                       m_RobotMode;                            // Keep track of the current robot state
     DriveState                      m_RobotDriveState;                      // Keep track of how the drive sequence flows
     Alliance                        m_AllianceColor;                        // Color reported by driver station during a match
     bool                            m_bDriveSwap;                           // Allow the user to push a button to change forward/reverse
+    std::string                     m_GameData;                             // String representing 2020 game specific data
+
+    static const char               GAME_DATA_BLUE                          = 'B';
+    static const char               GAME_DATA_GREEN                         = 'G';
+    static const char               GAME_DATA_RED                           = 'R';
+    static const char               GAME_DATA_YELLOW                        = 'Y';
     
     // CONSTS
     
