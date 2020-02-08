@@ -39,8 +39,8 @@ YtaRobot::YtaRobot() :
     m_pDriverStation                    (&DriverStation::GetInstance()),
     m_pDriveJoystick                    (nullptr),
     m_pControlJoystick                  (nullptr),
-    m_pDriveCustomController            (new YtaController(DRIVE_JOYSTICK_PORT)),
-    m_pControlCustomController          (new YtaController(CONTROL_JOYSTICK_PORT)),
+    m_pDriveCustomController            (new YtaController(DRIVE_CUSTOM_CONTROLLER_TYPE, DRIVE_JOYSTICK_PORT, true)),
+    m_pControlCustomController          (new YtaController(CONTROL_CUSTOM_CONTROLLER_TYPE, CONTROL_JOYSTICK_PORT, false)),
     m_pDriveLogitechExtreme             (new Joystick(DRIVE_JOYSTICK_PORT)),
     m_pControlLogitechExtreme           (new Joystick(CONTROL_JOYSTICK_PORT)),
     m_pDriveXboxGameSir                 (new XboxController(DRIVE_JOYSTICK_PORT)),
@@ -87,17 +87,37 @@ YtaRobot::YtaRobot() :
     {
         case CUSTOM_CONTROLLER:
         {
+            switch (DRIVE_CUSTOM_CONTROLLER_TYPE)
+            {
+                case YtaController::LOGITECH:
+                {
+                    RobotUtils::DisplayMessage("Driver controller: Custom Logitech");
+                    break;
+                }
+                case YtaController::PLAY_STATION:
+                {
+                    RobotUtils::DisplayMessage("Driver controller: Custom Play Station");
+                    break;
+                }
+                default:
+                {
+                    ASSERT(false);
+                    break;
+                }
+            }
             m_pDriveJoystick = m_pDriveCustomController;
             break;
         }
         case LOGITECH_EXTREME:
         {
+            RobotUtils::DisplayMessage("Driver controller: Logitech Extreme");
             m_pDriveJoystick = m_pDriveLogitechExtreme;
             break;
         }
         case LOGITECH_GAMEPAD:
         case XBOX_GAMESIR:
         {
+            RobotUtils::DisplayMessage("Driver controller: Xbox");
             m_pDriveJoystick = m_pDriveXboxGameSir;
             break;
         }
@@ -114,17 +134,37 @@ YtaRobot::YtaRobot() :
     {
         case CUSTOM_CONTROLLER:
         {
+            switch (DRIVE_CUSTOM_CONTROLLER_TYPE)
+            {
+                case YtaController::LOGITECH:
+                {
+                    RobotUtils::DisplayMessage("Control controller: Custom Logitech");
+                    break;
+                }
+                case YtaController::PLAY_STATION:
+                {
+                    RobotUtils::DisplayMessage("Control controller: Custom Play Station");
+                    break;
+                }
+                default:
+                {
+                    ASSERT(false);
+                    break;
+                }
+            }
             m_pControlJoystick = m_pControlCustomController;
             break;
         }
         case LOGITECH_EXTREME:
         {
+            RobotUtils::DisplayMessage("Control controller: Logitech Extreme");
             m_pControlJoystick = m_pControlLogitechExtreme;
             break;
         }
         case LOGITECH_GAMEPAD:
         case XBOX_GAMESIR:
         {
+            RobotUtils::DisplayMessage("Control controller: Xbox");
             m_pControlJoystick = m_pControlXboxGameSir;
             break;
         }
@@ -135,6 +175,10 @@ YtaRobot::YtaRobot() :
             break;
         }
     }
+
+    RobotUtils::DisplayFormattedMessage("The drive forward axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.RIGHT_TRIGGER);
+    RobotUtils::DisplayFormattedMessage("The drive reverse axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_TRIGGER);
+    RobotUtils::DisplayFormattedMessage("The drive left/right axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_X_AXIS);
     
     // @todo: Figure out how to assign these sooner to a valid joystick.
     // Since the triggers use a joystick object, they can't be created until the joysticks are assigned
@@ -573,10 +617,25 @@ void YtaRobot::DriveControlSequence()
             break;
         }
     }
+
+    // All the controllers are normalized
+    // to represent the x and y axes with
+    // the following values:
+    //   -1
+    //    |
+    // -1---+1
+    //    |
+    //   +1
     
     // Get driver X/Y inputs
     double xAxisDrive = m_pDriveJoystick->GetX();
     double yAxisDrive = m_pDriveJoystick->GetY();
+
+    if (RobotUtils::DEBUG_PRINTS)
+    {
+        SmartDashboard::PutNumber("x-axis input", xAxisDrive);
+        SmartDashboard::PutNumber("y-axis input", yAxisDrive);
+    }
     
     // Make sure axes inputs clear a certain threshold.  This will help to drive straight.
     xAxisDrive = Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
@@ -602,6 +661,12 @@ void YtaRobot::DriveControlSequence()
     // Set motor speed
     m_pLeftDriveMotors->Set(leftSpeed);
     m_pRightDriveMotors->Set(rightSpeed);
+
+    if (RobotUtils::DEBUG_PRINTS)
+    {
+        SmartDashboard::PutNumber("Left drive speed", leftSpeed);
+        SmartDashboard::PutNumber("Right drive speed", rightSpeed);
+    }
     
     /*
     // First check for inching controls

@@ -94,6 +94,8 @@ private:
     typedef DriverStation::Alliance Alliance;
     typedef GenericHID::JoystickHand JoystickHand;
     typedef YtaTalon::MotorGroupControlMode MotorGroupControlMode;
+    typedef YtaController::CustomControllerType CustomControllerType;
+    typedef YtaController::ControllerMappings ControllerMappings;
     
     // ENUMS
     enum RobotMode
@@ -384,22 +386,26 @@ private:
     // Joysticks/Buttons
     static const ControllerType     DRIVE_CONTROLLER_TYPE                   = CUSTOM_CONTROLLER;
     static const ControllerType     CONTROL_CONTROLLER_TYPE                 = CUSTOM_CONTROLLER;
+    static const CustomControllerType DRIVE_CUSTOM_CONTROLLER_TYPE          = YtaController::PLAY_STATION;
+    static const CustomControllerType CONTROL_CUSTOM_CONTROLLER_TYPE        = YtaController::LOGITECH;
+    static constexpr const ControllerMappings * const DRIVE_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE);
+    static constexpr const ControllerMappings * const CONTROL_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(CONTROL_CUSTOM_CONTROLLER_TYPE);
     
     static const int                DRIVE_JOYSTICK_PORT                     = 0;
     static const int                CONTROL_JOYSTICK_PORT                   = 1;
 
     // Driver buttons
-    static const int                DRIVE_SLOW_X_AXIS                       = YtaController::RawAxes::RIGHT_X_AXIS;
-    static const int                DRIVE_SLOW_Y_AXIS                       = YtaController::RawAxes::RIGHT_Y_AXIS;
-    static const int                CAMERA_TOGGLE_FULL_PROCESSING_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 11 : YtaController::RawButtons::SELECT;
-    static const int                CAMERA_TOGGLE_PROCESSED_IMAGE_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 12 : YtaController::RawButtons::START;
-    static const int                SELECT_FRONT_CAMERA_BUTTON              = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 13 : YtaController::RawButtons::LEFT_STICK_CLICK;
-    static const int                SELECT_BACK_CAMERA_BUTTON               = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 : YtaController::RawButtons::RIGHT_STICK_CLICK;
-    static const int                DRIVE_CONTROLS_FORWARD_BUTTON           = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 15 : YtaController::RawButtons::NO_BUTTON;
-    static const int                DRIVE_CONTROLS_REVERSE_BUTTON           = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 16 : YtaController::RawButtons::NO_BUTTON;
+    static const int                DRIVE_SLOW_X_AXIS                       = DRIVE_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.RIGHT_X_AXIS;
+    static const int                DRIVE_SLOW_Y_AXIS                       = DRIVE_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.RIGHT_Y_AXIS;
+    static const int                CAMERA_TOGGLE_FULL_PROCESSING_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 11 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.SELECT;
+    static const int                CAMERA_TOGGLE_PROCESSED_IMAGE_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 12 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.START;
+    static const int                SELECT_FRONT_CAMERA_BUTTON              = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 13 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_STICK_CLICK;
+    static const int                SELECT_BACK_CAMERA_BUTTON               = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_STICK_CLICK;
+    static const int                DRIVE_CONTROLS_FORWARD_BUTTON           = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 15 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
+    static const int                DRIVE_CONTROLS_REVERSE_BUTTON           = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 16 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     
     // Control buttons
-    static const int                ESTOP_BUTTON                            = (CONTROL_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 :  YtaController::RawButtons::START;
+    static const int                ESTOP_BUTTON                            = (CONTROL_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 :  CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
 
     // CAN Signals
     static const int                LEFT_MOTORS_CAN_START_ID                = 1;
