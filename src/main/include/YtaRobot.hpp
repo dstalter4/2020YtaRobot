@@ -460,6 +460,73 @@ private:
     static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = -1.00;
     static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = -1.00;
     static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              =  1.00;
+
+    ////////////////////////////////////////////////////////////////
+    // Inputs from joystick:
+    //
+    // Forward:     (0, -1)
+    // Backward:    (0, +1)
+    // Left:        (-1, 0)
+    // Right:       (+1, 0)
+    //
+    // Equations:
+    //
+    //     x+y   x-y   -x+y   -x-y
+    // F:   -1    +1     -1     +1
+    // B:   +1    -1     +1     -1
+    // L:   -1    -1     +1     +1
+    // R:   +1    +1     -1     -1
+    //
+    // Output to motors:
+    //
+    // Left forward/right = +1, Right forward/left = +1:
+    // Left backward/left = -1, Right backward/right = -1:
+    // x-y, -x-y
+    //
+    // Left forward/right = -1, Right forward/left = -1:
+    // Left backward/left = +1, Right backward/right = +1:
+    // -x+y, x+y
+    //
+    // Left forward/right = +1, Right forward/left = -1:
+    // Left backward/left = -1, Right backward/right = +1:
+    // x-y, x+y
+    //
+    // Left forward/right = -1, Right forward/left = +1:
+    // Left backward/left = +1, Right backward/right = -1:
+    // -x+y, -x-y
+    ////////////////////////////////////////////////////////////////
+
+    inline static constexpr double LeftDriveEquation(double xInput, double yInput)
+    {
+        double leftValue = 0.0;
+
+        if (static_cast<int>(LEFT_DRIVE_FORWARD_SCALAR) == 1)
+        {
+            leftValue = xInput - yInput;
+        }
+        else
+        {
+            leftValue = -xInput + yInput;
+        }
+        
+        return leftValue;
+    }
+
+    inline static constexpr double RightDriveEquation(double xInput, double yInput)
+    {
+        double rightValue = 0.0;
+
+        if (static_cast<int>(RIGHT_DRIVE_FORWARD_SCALAR) == 1)
+        {
+            rightValue = -xInput - yInput;
+        }
+        else
+        {
+            rightValue = xInput + yInput;
+        }
+        
+        return rightValue;
+    }
     
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
     static constexpr double         JOYSTICK_TRIM_LOWER_LIMIT               = -0.10;
