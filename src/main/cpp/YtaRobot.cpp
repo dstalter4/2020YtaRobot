@@ -39,8 +39,8 @@ YtaRobot::YtaRobot() :
     m_pDriverStation                    (&DriverStation::GetInstance()),
     m_pDriveJoystick                    (nullptr),
     m_pControlJoystick                  (nullptr),
-    m_pDriveCustomController            (new YtaController(DRIVE_JOYSTICK_PORT)),
-    m_pControlCustomController          (new YtaController(CONTROL_JOYSTICK_PORT)),
+    m_pDriveCustomController            (new YtaController(DRIVE_CUSTOM_CONTROLLER_TYPE, DRIVE_JOYSTICK_PORT, true)),
+    m_pControlCustomController          (new YtaController(CONTROL_CUSTOM_CONTROLLER_TYPE, CONTROL_JOYSTICK_PORT, false)),
     m_pDriveLogitechExtreme             (new Joystick(DRIVE_JOYSTICK_PORT)),
     m_pControlLogitechExtreme           (new Joystick(CONTROL_JOYSTICK_PORT)),
     m_pDriveXboxGameSir                 (new XboxController(DRIVE_JOYSTICK_PORT)),
@@ -87,17 +87,37 @@ YtaRobot::YtaRobot() :
     {
         case CUSTOM_CONTROLLER:
         {
+            switch (DRIVE_CUSTOM_CONTROLLER_TYPE)
+            {
+                case YtaController::LOGITECH:
+                {
+                    RobotUtils::DisplayMessage("Driver controller: Custom Logitech");
+                    break;
+                }
+                case YtaController::PLAY_STATION:
+                {
+                    RobotUtils::DisplayMessage("Driver controller: Custom Play Station");
+                    break;
+                }
+                default:
+                {
+                    ASSERT(false);
+                    break;
+                }
+            }
             m_pDriveJoystick = m_pDriveCustomController;
             break;
         }
         case LOGITECH_EXTREME:
         {
+            RobotUtils::DisplayMessage("Driver controller: Logitech Extreme");
             m_pDriveJoystick = m_pDriveLogitechExtreme;
             break;
         }
         case LOGITECH_GAMEPAD:
         case XBOX_GAMESIR:
         {
+            RobotUtils::DisplayMessage("Driver controller: Xbox");
             m_pDriveJoystick = m_pDriveXboxGameSir;
             break;
         }
@@ -114,17 +134,37 @@ YtaRobot::YtaRobot() :
     {
         case CUSTOM_CONTROLLER:
         {
+            switch (DRIVE_CUSTOM_CONTROLLER_TYPE)
+            {
+                case YtaController::LOGITECH:
+                {
+                    RobotUtils::DisplayMessage("Control controller: Custom Logitech");
+                    break;
+                }
+                case YtaController::PLAY_STATION:
+                {
+                    RobotUtils::DisplayMessage("Control controller: Custom Play Station");
+                    break;
+                }
+                default:
+                {
+                    ASSERT(false);
+                    break;
+                }
+            }
             m_pControlJoystick = m_pControlCustomController;
             break;
         }
         case LOGITECH_EXTREME:
         {
+            RobotUtils::DisplayMessage("Control controller: Logitech Extreme");
             m_pControlJoystick = m_pControlLogitechExtreme;
             break;
         }
         case LOGITECH_GAMEPAD:
         case XBOX_GAMESIR:
         {
+            RobotUtils::DisplayMessage("Control controller: Xbox");
             m_pControlJoystick = m_pControlXboxGameSir;
             break;
         }
@@ -135,6 +175,10 @@ YtaRobot::YtaRobot() :
             break;
         }
     }
+
+    RobotUtils::DisplayFormattedMessage("The drive forward axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.RIGHT_TRIGGER);
+    RobotUtils::DisplayFormattedMessage("The drive reverse axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_TRIGGER);
+    RobotUtils::DisplayFormattedMessage("The drive left/right axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_X_AXIS);
     
     // @todo: Figure out how to assign these sooner to a valid joystick.
     // Since the triggers use a joystick object, they can't be created until the joysticks are assigned
@@ -529,13 +573,25 @@ void YtaRobot::CameraSequence()
 ////////////////////////////////////////////////////////////////
 void YtaRobot::DriveControlSequence()
 {
-    // Check for a directional align first
-    DirectionalAlign();
-    
-    // If an align is in progress, do not accept manual driver input
-    if (m_RobotDriveState == DIRECTIONAL_ALIGN)
+    if (DIRECTIONAL_ALIGN_ENABLED)
     {
-        return;
+        // Check for a directional align first
+        DirectionalAlign();
+        
+        // If an align is in progress, do not accept manual driver input
+        if (m_RobotDriveState == DIRECTIONAL_ALIGN)
+        {
+            return;
+        }
+    }
+
+    if (DIRECTIONAL_INCH_ENABLED)
+    {
+        // If a directional inch occurred, just return
+        if (DirectionalInch())
+        {
+            return;
+        }
     }
 
     //CheckForDriveSwap();
@@ -573,10 +629,25 @@ void YtaRobot::DriveControlSequence()
             break;
         }
     }
+
+    // All the controllers are normalized
+    // to represent the x and y axes with
+    // the following values:
+    //   -1
+    //    |
+    // -1---+1
+    //    |
+    //   +1
     
     // Get driver X/Y inputs
     double xAxisDrive = m_pDriveJoystick->GetX();
     double yAxisDrive = m_pDriveJoystick->GetY();
+
+    if (RobotUtils::DEBUG_PRINTS)
+    {
+        SmartDashboard::PutNumber("x-axis input", xAxisDrive);
+        SmartDashboard::PutNumber("y-axis input", yAxisDrive);
+    }
     
     // Make sure axes inputs clear a certain threshold.  This will help to drive straight.
     xAxisDrive = Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
@@ -588,46 +659,29 @@ void YtaRobot::DriveControlSequence()
         yAxisDrive *= -1;
     }
     
-    // Get the slow drive control joystick input
-    double xAxisSlowDrive = m_pDriveJoystick->GetRawAxis(DRIVE_SLOW_X_AXIS);
-    xAxisSlowDrive = Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
-    
-    // If the normal x-axis drive is non-zero, use it.  Otherwise use the slow drive input, which could also be zero.
-    xAxisDrive = (xAxisDrive != 0.0) ? xAxisDrive : xAxisSlowDrive;
+    if (SLOW_DRIVE_ENABLED)
+    {
+        // Get the slow drive control joystick input
+        double xAxisSlowDrive = m_pDriveJoystick->GetRawAxis(DRIVE_SLOW_X_AXIS);
+        xAxisSlowDrive = Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+        
+        // If the normal x-axis drive is non-zero, use it.  Otherwise use the slow drive input, which could also be zero.
+        xAxisDrive = (xAxisDrive != 0.0) ? xAxisDrive : xAxisSlowDrive;
+    }
     
     // Filter motor speeds
-    double leftSpeed = Limit((xAxisDrive - yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
-    double rightSpeed = Limit((xAxisDrive + yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double leftSpeed = Limit((xAxisDrive + yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double rightSpeed = Limit((xAxisDrive - yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
     
     // Set motor speed
     m_pLeftDriveMotors->Set(leftSpeed);
     m_pRightDriveMotors->Set(rightSpeed);
-    
-    /*
-    // First check for inching controls
-    if (m_pDriveJoystick->GetRawButton(INCH_FORWARD_BUTTON))
+
+    if (RobotUtils::DEBUG_PRINTS)
     {
-        DirectionalInch(INCHING_DRIVE_SPEED, FORWARD);
+        SmartDashboard::PutNumber("Left drive speed", leftSpeed);
+        SmartDashboard::PutNumber("Right drive speed", rightSpeed);
     }
-    else if (m_pDriveJoystick->GetRawButton(INCH_BACKWARD_BUTTON))
-    {
-        DirectionalInch(INCHING_DRIVE_SPEED, REVERSE);
-    }
-    else if (m_pDriveJoystick->GetRawButton(INCH_LEFT_BUTTON))
-    {
-        DirectionalInch(INCHING_DRIVE_SPEED, LEFT);
-    }
-    else if (m_pDriveJoystick->GetRawButton(INCH_RIGHT_BUTTON))
-    {
-        DirectionalInch(INCHING_DRIVE_SPEED, RIGHT);
-    }
-    else
-    {
-        // Set motor speed
-        m_pLeftDriveMotors->Set(leftSpeed);
-        m_pRightDriveMotors->Set(rightSpeed);
-    }
-    */
 }
 
 
@@ -639,41 +693,46 @@ void YtaRobot::DriveControlSequence()
 /// inching.  Based on input direction, it will briefly move the
 /// robot a slight amount in that direction.
 ///
+/// @return bool
+///     @retval true - Directional inch occurred
+///     @retval false - Directional inch did not occur
+///
 ////////////////////////////////////////////////////////////////
-void YtaRobot::DirectionalInch(double speed, EncoderDirection direction)
+bool YtaRobot::DirectionalInch()
 {
+    double leftSpeed = 0.0;
+    double rightSpeed = 0.0;
+
     // 20xx LEFT FORWARD DRIVE IS NEGATIVE
     // 20xx RIGHT FORWARD DRIVE IS POSITIVE
-    double leftSpeed = speed;
-    double rightSpeed = speed;
-    
-    // Negate appropriate motor speeds, based on direction
-    switch (direction)
+    if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_FORWARD_BUTTON))
     {
-        case FORWARD:
-        {
-            leftSpeed *= -1.0;
-            break;
-        }
-        case REVERSE:
-        {
-            rightSpeed *= -1.0;
-            break;
-        }
-        case LEFT:
-        {
-            break;
-        }
-        case RIGHT:
-        {
-            leftSpeed *= -1.0;
-            rightSpeed *= -1.0;
-            break;
-        }
-        default:
-        {
-            break;
-        }
+        leftSpeed = -INCHING_DRIVE_SPEED;
+        rightSpeed = INCHING_DRIVE_SPEED;
+    }
+    else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_BACKWARD_BUTTON))
+    {
+        leftSpeed = INCHING_DRIVE_SPEED;
+        rightSpeed = -INCHING_DRIVE_SPEED;
+    }
+    else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_LEFT_BUTTON))
+    {
+        leftSpeed = INCHING_DRIVE_SPEED;
+        rightSpeed = INCHING_DRIVE_SPEED;
+    }
+    else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_RIGHT_BUTTON))
+    {
+        leftSpeed = -INCHING_DRIVE_SPEED;
+        rightSpeed = -INCHING_DRIVE_SPEED;
+    }
+    else
+    {
+    }
+    
+    if ((leftSpeed == 0.0) && (rightSpeed == 0.0))
+    {
+        // No directional inch input, just return
+        return false;
     }
     
     // Start the timer
@@ -695,6 +754,8 @@ void YtaRobot::DirectionalInch(double speed, EncoderDirection direction)
     // Stop the timer
     m_pInchingDriveTimer->Stop();
     m_pInchingDriveTimer->Reset();
+
+    return true;
 }
 
 
