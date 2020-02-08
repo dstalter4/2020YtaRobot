@@ -5,7 +5,7 @@
 /// @details
 /// Implementation of autonomous encoder based routines.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
@@ -65,10 +65,8 @@ int YtaRobot::GetEncoderRotationsFromInches(int inches, double diameter, bool bU
 /// encoders.
 ///
 ////////////////////////////////////////////////////////////////
-void YtaRobot::AutonomousEncoderDrive(double speed, double distance, EncoderDirection direction)
+void YtaRobot::AutonomousEncoderDrive(double speed, double distance, RobotDirection direction)
 {
-    // 20xx LEFT FORWARD DRIVE IS NEGATIVE
-    // 20xx RIGHT FORWARD DRIVE IS POSITIVE
     // 20xx LEFT ENCODER VALUE DECREASES GOING FORWARD
     // 20xx RIGHT ENCODER VALUE INCREASES GOING FORWARD
     
@@ -107,31 +105,33 @@ void YtaRobot::AutonomousEncoderDrive(double speed, double distance, EncoderDire
         // Set speeds, adjust below if needed
         double leftDriveSpeed = speed;
         double rightDriveSpeed = speed;
-        double leftDriveScale = 1.0;
-        double rightDriveScale = 1.0;
+        double leftDriveScale = 0.0;
+        double rightDriveScale = 0.0;
         
         // Get encoder values to always be positive, based on direction.
         // Also scale the drive motors for direction.
         switch (direction)
         {
-            case FORWARD:
+            case ROBOT_FORWARD:
             {
                 leftEncVal = -(m_pLeftDriveMotors->GetEncoderValue());
                 rightEncVal = m_pRightDriveMotors->GetEncoderValue();
-                leftDriveScale = -1.0;
-                
+                leftDriveScale = LEFT_DRIVE_FORWARD_SCALAR;
+                rightDriveScale = RIGHT_DRIVE_FORWARD_SCALAR;
                 break;
             }
-            case REVERSE:
+            case ROBOT_REVERSE:
             {
                 leftEncVal = m_pLeftDriveMotors->GetEncoderValue();
                 rightEncVal = -(m_pRightDriveMotors->GetEncoderValue());
-                rightDriveScale = -1.0;
-                
+                leftDriveScale = LEFT_DRIVE_REVERSE_SCALAR;
+                rightDriveScale = RIGHT_DRIVE_REVERSE_SCALAR;
                 break;
             }
             default:
             {
+                leftDriveSpeed = 0.0;
+                rightDriveSpeed = 0.0;
                 break;
             }
         }
@@ -161,7 +161,7 @@ void YtaRobot::AutonomousEncoderDrive(double speed, double distance, EncoderDire
         {
             SmartDashboard::PutNumber("Enc. L: ", leftEncVal);
             SmartDashboard::PutNumber("Enc. R: ", rightEncVal);
-            SmartDashboard::PutNumber("Enc Diff: ", leftEncVal - rightEncVal);
+            SmartDashboard::PutNumber("Enc Diff: ", std::abs(leftEncVal - rightEncVal));
         }
     
     } while ( (leftEncVal < GetEncoderRotationsFromInches(distance, DRIVE_WHEEL_DIAMETER_INCHES)) 

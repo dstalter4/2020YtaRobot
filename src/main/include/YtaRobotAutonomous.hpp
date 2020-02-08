@@ -126,13 +126,49 @@ inline void YtaRobot::AutonomousDelay(double time)
 /// Drives during autonomous for a specified amount of time.
 ///
 ////////////////////////////////////////////////////////////////
-inline void YtaRobot::AutonomousDriveSequence(double speed, double time)
+inline void YtaRobot::AutonomousDriveSequence(RobotDirection direction, double speed, double time)
 {
-    // 20xx: Left forward is positive, Right forward is negative
-    
+    double leftSpeed = 0.0;
+    double rightSpeed = 0.0;
+
+    switch (direction)
+    {
+        case ROBOT_FORWARD:
+        {
+            leftSpeed = speed * LEFT_DRIVE_FORWARD_SCALAR;
+            rightSpeed = speed * RIGHT_DRIVE_FORWARD_SCALAR;
+            break;
+        }
+        case ROBOT_REVERSE:
+        {
+            leftSpeed = speed * LEFT_DRIVE_REVERSE_SCALAR;
+            rightSpeed = speed * RIGHT_DRIVE_REVERSE_SCALAR;
+            break;
+        }
+        case ROBOT_LEFT:
+        {
+            leftSpeed = speed * LEFT_DRIVE_REVERSE_SCALAR;
+            rightSpeed = speed * RIGHT_DRIVE_FORWARD_SCALAR;
+            break;
+        }
+        case ROBOT_RIGHT:
+        {
+            leftSpeed = speed * LEFT_DRIVE_FORWARD_SCALAR;
+            rightSpeed = speed * RIGHT_DRIVE_REVERSE_SCALAR;
+            break;
+        }
+        default:
+
+        {
+            leftSpeed = 0.0;
+            rightSpeed = 0.0;
+            break;
+        }
+    }
+
     // First turn the motors on
-    m_pLeftDriveMotors->Set(speed);
-    m_pRightDriveMotors->Set(-speed);
+    m_pLeftDriveMotors->Set(leftSpeed);
+    m_pRightDriveMotors->Set(rightSpeed);
 
     // Time it
     AutonomousDelay(time);
@@ -150,26 +186,31 @@ inline void YtaRobot::AutonomousDriveSequence(double speed, double time)
 /// Back drives the motors to abruptly stop the robot.
 ///
 ////////////////////////////////////////////////////////////////
-inline void YtaRobot::AutonomousBackDrive(EncoderDirection currentRobotDirection)
+inline void YtaRobot::AutonomousBackDrive(RobotDirection currentDirection)
 {
     double leftSpeed = YtaRobotAutonomous::COUNTERACT_COAST_MOTOR_SPEED;
     double rightSpeed = YtaRobotAutonomous::COUNTERACT_COAST_MOTOR_SPEED;
-    switch (currentRobotDirection)
+
+    switch (currentDirection)
     {
-        // 20xx: If we are currently going forward, left motor back drive is negative
-        case FORWARD:
+        // If we are currently going forward, back drive is reverse
+        case ROBOT_FORWARD:
         {
-            leftSpeed *= -1.0;
+            leftSpeed *= LEFT_DRIVE_REVERSE_SCALAR;
+            rightSpeed *= RIGHT_DRIVE_REVERSE_SCALAR;
             break;
         }
-        // 20xx: If we are currently going backward, right motor back drive is negative
-        case REVERSE:
+        // If we are currently going backward, back drive is forward
+        case ROBOT_REVERSE:
         {
-            rightSpeed *= -1.0;
+            leftSpeed *= LEFT_DRIVE_FORWARD_SCALAR;
+            rightSpeed *= RIGHT_DRIVE_FORWARD_SCALAR;
             break;
         }
         default:
         {
+            leftSpeed = 0.0;
+            rightSpeed = 0.0;
             break;
         }
     }
@@ -197,19 +238,33 @@ inline void YtaRobot::AutonomousBackDrive(EncoderDirection currentRobotDirection
 /// a turn.
 ///
 ////////////////////////////////////////////////////////////////
-inline void YtaRobot::AutonomousBackDriveTurn(GyroDirection currentGyroDirection)
+inline void YtaRobot::AutonomousBackDriveTurn(RobotDirection currentDirection)
 {
     double leftSpeed = YtaRobotAutonomous::COUNTERACT_COAST_MOTOR_SPEED;
     double rightSpeed = YtaRobotAutonomous::COUNTERACT_COAST_MOTOR_SPEED;
-    
-    // 20xx: Left turns have -/- to the motors
-    // 20xx: Right turns have +/+ to the motors
-    
-    // If the turn is right, counteract is -/-
-    if (currentGyroDirection == RIGHT_TURN)
+
+    switch (currentDirection)
     {
-        leftSpeed *= -1.0;
-        rightSpeed *= -1.0;
+        // If the turn is left, counteract is right
+        case ROBOT_LEFT:
+        {
+            leftSpeed *= LEFT_DRIVE_FORWARD_SCALAR;
+            rightSpeed *= RIGHT_DRIVE_REVERSE_SCALAR;
+            break;
+        }
+        // If the turn is right, counteract is left
+        case ROBOT_RIGHT:
+        {
+            leftSpeed *= LEFT_DRIVE_REVERSE_SCALAR;
+            rightSpeed *= RIGHT_DRIVE_FORWARD_SCALAR;
+            break;
+        }
+        default:
+        {
+            leftSpeed = 0.0;
+            rightSpeed = 0.0;
+            break;
+        }
     }
     
     // Counteract coast

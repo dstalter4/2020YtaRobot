@@ -5,7 +5,7 @@
 /// @details
 /// Implementation of autonomous gyroscope routines.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
@@ -28,14 +28,12 @@
 ////////////////////////////////////////////////////////////////
 bool YtaRobot::AutonomousGyroLeftTurn(double destAngle, double turnSpeed)
 {
-    // 20xx LEFT FORWARD DRIVE IS POSITIVE
-    // 20xx RIGHT FORWARD DRIVE IS NEGATIVE    
     // 20xx LEFT TURNS DECREASE GYRO ANGLE
     // Left turn is left motors back, right motors forward
     
     // Left turns are right motors forward, left motors reverse
-    m_pLeftDriveMotors->Set(-turnSpeed);
-    m_pRightDriveMotors->Set(-turnSpeed);
+    m_pLeftDriveMotors->Set(turnSpeed * LEFT_DRIVE_REVERSE_SCALAR);
+    m_pRightDriveMotors->Set(turnSpeed * RIGHT_DRIVE_FORWARD_SCALAR);
     
     m_pSafetyTimer->Reset();
     m_pSafetyTimer->Start();
@@ -64,7 +62,7 @@ bool YtaRobot::AutonomousGyroLeftTurn(double destAngle, double turnSpeed)
     m_pSafetyTimer->Reset();
     
     // Counteract coast
-    AutonomousBackDriveTurn(LEFT_TURN);
+    AutonomousBackDriveTurn(ROBOT_LEFT);
     
     return true;
 }
@@ -79,16 +77,12 @@ bool YtaRobot::AutonomousGyroLeftTurn(double destAngle, double turnSpeed)
 ////////////////////////////////////////////////////////////////
 bool YtaRobot::AutonomousGyroRightTurn(double destAngle, double turnSpeed)
 {
-    // 20xx LEFT FORWARD DRIVE IS POSITIVE
-    // 20xx RIGHT FORWARD DRIVE IS NEGATIVE
     // 20xx RIGHT TURNS INCREASE GYRO ANGLE
     // Right turn is left motors forward, right motors back
     
-    //double startAngle = GetGyroValue(BNO055);
-    
     // Right turns are left motors forward, right motors reverse
-    m_pLeftDriveMotors->Set(turnSpeed);
-    m_pRightDriveMotors->Set(turnSpeed);
+    m_pLeftDriveMotors->Set(turnSpeed * LEFT_DRIVE_FORWARD_SCALAR);
+    m_pRightDriveMotors->Set(turnSpeed * RIGHT_DRIVE_REVERSE_SCALAR);
     
     m_pSafetyTimer->Reset();
     m_pSafetyTimer->Start();
@@ -117,7 +111,7 @@ bool YtaRobot::AutonomousGyroRightTurn(double destAngle, double turnSpeed)
     m_pSafetyTimer->Reset();
     
     // Counteract coast
-    AutonomousBackDriveTurn(RIGHT_TURN);
+    AutonomousBackDriveTurn(ROBOT_RIGHT);
     
     return true;
 }

@@ -122,18 +122,12 @@ private:
         DIRECTIONAL_ALIGN
     };
     
-    enum EncoderDirection
+    enum RobotDirection
     {
-        FORWARD,
-        REVERSE,
-        LEFT,
-        RIGHT
-    };
-    
-    enum GyroDirection
-    {
-        LEFT_TURN,
-        RIGHT_TURN
+        ROBOT_FORWARD,
+        ROBOT_REVERSE,
+        ROBOT_LEFT,
+        ROBOT_RIGHT
     };
 
     enum GyroType
@@ -150,13 +144,6 @@ private:
         RIGHT_GUIDE     = 0x02,
         FORWARD_GUIDE   = 0x10,
         REVERSE_GUIDE   = 0x20
-    };
-    
-    enum SonarDriveDirection
-    {
-        STOPPED,
-        SONAR_FORWARD,
-        SONAR_REVERSE
     };
     
     // STRUCTS
@@ -224,11 +211,11 @@ private:
     inline void AutonomousDelay(double time);
 
     // Autonomous drive for a specified time
-    inline void AutonomousDriveSequence(double speed, double time);
+    inline void AutonomousDriveSequence(RobotDirection direction, double speed, double time);
     
     // Autonomous routines to back drive the motors to abruptly stop
-    inline void AutonomousBackDrive(EncoderDirection currentRobotDirection);
-    inline void AutonomousBackDriveTurn(GyroDirection currentGyroDirection);
+    inline void AutonomousBackDrive(RobotDirection currentDirection);
+    inline void AutonomousBackDriveTurn(RobotDirection currentDirection);
     
     // Autonomous routines
     // @todo: Make YtaRobotAutonomous a friend and move these out (requires accessor to *this)!
@@ -240,8 +227,8 @@ private:
     void AutonomousCommonBlue();
     bool AutonomousGyroLeftTurn(double destAngle, double turnSpeed);
     bool AutonomousGyroRightTurn(double destAngle, double turnSpeed);
-    void AutonomousEncoderDrive(double speed, double distance, EncoderDirection direction);
-    bool AutonomousSonarDrive(SonarDriveDirection driveDirection, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist);
+    void AutonomousEncoderDrive(double speed, double distance, RobotDirection direction);
+    bool AutonomousSonarDrive(RobotDirection direction, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist);
 
     // Routine to put things in a known state
     void InitialStateSetup();
@@ -463,6 +450,16 @@ private:
     
     static const unsigned           CAMERA_RUN_INTERVAL_MS                  = 1000U;
     static const unsigned           I2C_RUN_INTERVAL_MS                     = 240U;
+
+    // These represent which motor value (+1/-1) represent
+    // forward/reverse in the robot.  They are used to keep
+    // autonomous movement code common without yearly updates.
+    // 2020: Left forward = +1, Right forward = -1
+
+    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               =  1.00;
+    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = -1.00;
+    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = -1.00;
+    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              =  1.00;
     
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
     static constexpr double         JOYSTICK_TRIM_LOWER_LIMIT               = -0.10;

@@ -699,37 +699,31 @@ void YtaRobot::DriveControlSequence()
 /// inching.  Based on input direction, it will briefly move the
 /// robot a slight amount in that direction.
 ///
-/// @return bool
-///     @retval true - Directional inch occurred
-///     @retval false - Directional inch did not occur
-///
 ////////////////////////////////////////////////////////////////
 bool YtaRobot::DirectionalInch()
 {
     double leftSpeed = 0.0;
     double rightSpeed = 0.0;
 
-    // 20xx LEFT FORWARD DRIVE IS NEGATIVE
-    // 20xx RIGHT FORWARD DRIVE IS POSITIVE
     if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_FORWARD_BUTTON))
     {
-        leftSpeed = -INCHING_DRIVE_SPEED;
-        rightSpeed = INCHING_DRIVE_SPEED;
+        leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR;
+        rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_FORWARD_SCALAR;
     }
     else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_BACKWARD_BUTTON))
     {
-        leftSpeed = INCHING_DRIVE_SPEED;
-        rightSpeed = -INCHING_DRIVE_SPEED;
+        leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_REVERSE_SCALAR;
+        rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR;
     }
     else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_LEFT_BUTTON))
     {
-        leftSpeed = INCHING_DRIVE_SPEED;
-        rightSpeed = INCHING_DRIVE_SPEED;
+        leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_REVERSE_SCALAR;
+        rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_FORWARD_SCALAR;
     }
     else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_RIGHT_BUTTON))
     {
-        leftSpeed = -INCHING_DRIVE_SPEED;
-        rightSpeed = -INCHING_DRIVE_SPEED;
+        leftSpeed = -INCHING_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR;
+        rightSpeed = -INCHING_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR;
     }
     else
     {
@@ -910,13 +904,13 @@ void YtaRobot::DirectionalAlign()
                 // The destination angle and direction is now known, time to do the move
                 if (bTurnLeft)
                 {
-                    m_pLeftDriveMotors->Set(-DIRECTIONAL_ALIGN_DRIVE_SPEED);
-                    m_pRightDriveMotors->Set(-DIRECTIONAL_ALIGN_DRIVE_SPEED);
+                    m_pLeftDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED * LEFT_DRIVE_REVERSE_SCALAR);
+                    m_pRightDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED * RIGHT_DRIVE_FORWARD_SCALAR);
                 }
                 if (bTurnRight)
                 {
-                    m_pLeftDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED);
-                    m_pRightDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED);
+                    m_pLeftDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR);
+                    m_pRightDriveMotors->Set(DIRECTIONAL_ALIGN_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR);
                 }
                 
                 // Start the safety timer
