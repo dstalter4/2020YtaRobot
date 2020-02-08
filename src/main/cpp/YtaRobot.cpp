@@ -722,8 +722,8 @@ bool YtaRobot::DirectionalInch()
     }
     else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_RIGHT_BUTTON))
     {
-        leftSpeed = -INCHING_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR;
-        rightSpeed = -INCHING_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR;
+        leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR;
+        rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR;
     }
     else
     {
