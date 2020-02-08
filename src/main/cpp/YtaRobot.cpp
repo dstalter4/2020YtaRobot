@@ -71,6 +71,7 @@ YtaRobot::YtaRobot() :
     m_RobotDriveState                   (MANUAL_CONTROL),
     m_AllianceColor                     (m_pDriverStation->GetAlliance()),
     m_bDriveSwap                        (false),
+    m_HeartBeat                         (0U),
     m_GameData                          ("")
 {
     RobotUtils::DisplayMessage("Robot constructor.");
@@ -282,6 +283,9 @@ void YtaRobot::InitialStateSetup()
     
     // Clear the debug output pin
     m_pDebugOutput->Set(false);
+
+    // Reset the heartbeat
+    m_HeartBeat = 0U;
 }
 
 
@@ -321,6 +325,8 @@ void YtaRobot::TeleopPeriodic()
 {
     // Log a mode change if one occurred
     CheckAndUpdateRobotMode(ROBOT_MODE_TELEOP);
+
+    HeartBeat();
 
     DriveControlSequence();
 
