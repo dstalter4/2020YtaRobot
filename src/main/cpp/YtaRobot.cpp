@@ -65,10 +65,13 @@ YtaRobot::YtaRobot() :
     m_SerialPortBuffer                  (),
     m_pSerialPort                       (new SerialPort(SERIAL_PORT_BAUD_RATE, SerialPort::kMXP, SERIAL_PORT_NUM_DATA_BITS, SerialPort::kParity_None, SerialPort::kStopBits_One)),
     m_I2cThread                         (RobotI2c::I2cThread),
+    m_pColorSensor                      (new rev::ColorSensorV3(I2C::Port::kOnboard)),
+    m_pColorMatcher                     (new rev::ColorMatch()),
     m_RobotMode                         (ROBOT_MODE_NOT_SET),
     m_RobotDriveState                   (MANUAL_CONTROL),
     m_AllianceColor                     (m_pDriverStation->GetAlliance()),
-    m_bDriveSwap                        (false)
+    m_bDriveSwap                        (false),
+    m_GameData                          ("")
 {
     RobotUtils::DisplayMessage("Robot constructor.");
     
@@ -151,6 +154,12 @@ YtaRobot::YtaRobot() :
     // Spawn the vision and I2C threads
     m_CameraThread.detach();
     m_I2cThread.detach();
+
+    // Add the target color values to the matcher
+    m_pColorMatcher->AddColorMatch(BLUE_TARGET_COLOR);
+    m_pColorMatcher->AddColorMatch(GREEN_TARGET_COLOR);
+    m_pColorMatcher->AddColorMatch(RED_TARGET_COLOR);
+    m_pColorMatcher->AddColorMatch(YELLOW_TARGET_COLOR);
 }
 
 
@@ -271,6 +280,8 @@ void YtaRobot::TeleopPeriodic()
 
     DriveControlSequence();
 
+    ColorSequence();
+
     //LedSequence();
 
     //PneumaticSequence();
@@ -280,6 +291,90 @@ void YtaRobot::TeleopPeriodic()
     //I2cSequence();
     
     //CameraSequence();
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::ColorSequence
+///
+/// This method contains the main workflow for interacting with
+/// the color sensor and associated field elements.
+///
+////////////////////////////////////////////////////////////////
+void YtaRobot::ColorSequence()
+{
+    m_GameData = frc::DriverStation::GetInstance().GetGameSpecificMessage();
+    
+    // Sample code uses 'if m_GameData.length() > 0' too.
+    frc::Color targetColor = {0.0, 0.0, 0.0};
+    switch (m_GameData[0])
+    {
+        case GAME_DATA_BLUE:
+        {
+            targetColor = BLUE_TARGET_COLOR;
+            break;
+        }
+        case GAME_DATA_GREEN:
+        {
+            targetColor = GREEN_TARGET_COLOR;
+            break;
+        }
+        case GAME_DATA_RED:
+        {
+            targetColor = RED_TARGET_COLOR;
+            break;
+        }
+        case GAME_DATA_YELLOW:
+        {
+            targetColor = YELLOW_TARGET_COLOR;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
+    frc::Color detectedColor = m_pColorSensor->GetColor();
+    double irDistance = m_pColorSensor->GetIR();
+    uint32_t proximity = m_pColorSensor->GetProximity();
+
+    double confidence = 0.0;
+    frc::Color matchedColor = m_pColorMatcher->MatchClosestColor(detectedColor, confidence);
+
+    std::string colorString = "";
+    if (matchedColor == BLUE_TARGET_COLOR)
+    {
+      colorString = "Blue";
+    }
+    else if (matchedColor == RED_TARGET_COLOR)
+    {
+      colorString = "Red";
+    }
+    else if (matchedColor == GREEN_TARGET_COLOR)
+    {
+      colorString = "Green";
+    }
+    else if (matchedColor == YELLOW_TARGET_COLOR)
+    {
+      colorString = "Yellow";
+    }
+    else
+    {
+      colorString = "Unknown";
+    }
+    
+    if (RobotUtils::DEBUG_PRINTS)
+    {
+        SmartDashboard::PutNumber("Color sensor red", detectedColor.red);
+        SmartDashboard::PutNumber("Color sensor green", detectedColor.green);
+        SmartDashboard::PutNumber("Color sensor blue", detectedColor.blue);
+        SmartDashboard::PutNumber("Color sensor IR distance", irDistance);
+        SmartDashboard::PutNumber("Color sensor proximity", proximity);
+        SmartDashboard::PutString("Color sensor detected color", colorString);
+        SmartDashboard::PutNumber("Color sensor match confidence", confidence);
+    }
 }
 
 
