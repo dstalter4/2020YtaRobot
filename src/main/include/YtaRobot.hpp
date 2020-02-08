@@ -198,6 +198,9 @@ private:
     static YtaRobot * m_pThis;
     inline void SetStaticThisInstance() { m_pThis = this; }
     inline static YtaRobot * GetRobotInstance() { return m_pThis; }
+
+    // Increments a variable to indicate the robot code is successfully running
+    inline void HeartBeat();
     
     // Checks for a robot state change and logs a message if so
     inline void CheckAndUpdateRobotMode(RobotMode robotMode);
@@ -374,6 +377,7 @@ private:
     DriveState                      m_RobotDriveState;                      // Keep track of how the drive sequence flows
     Alliance                        m_AllianceColor;                        // Color reported by driver station during a match
     bool                            m_bDriveSwap;                           // Allow the user to push a button to change forward/reverse
+    uint32_t                        m_HeartBeat;                            // Incremental counter to indicate the robot code is executing
     std::string                     m_GameData;                             // String representing 2020 game specific data
 
     static const char               GAME_DATA_BLUE                          = 'B';
@@ -491,6 +495,20 @@ private:
     static const Relay::Value       LEDS_ON                                 = Relay::kOff;
     
 };  // End class
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::HeartBeat
+///
+/// Increments the heartbeat counter.
+///
+////////////////////////////////////////////////////////////////
+inline void YtaRobot::HeartBeat()
+{
+    m_HeartBeat++;
+    SmartDashboard::PutNumber("Heartbeat", m_HeartBeat);
+}
 
 
 

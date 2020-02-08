@@ -117,6 +117,7 @@ void RobotCamera::LimelightThread()
     RobotUtils::DisplayMessage("Limelight vision thread detached.");
     
     // Get the limelight network table
+    // Static IP: 10.1.20.11
     m_LimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     
     // Put the limelight camera in driver mode.
