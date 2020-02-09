@@ -454,12 +454,12 @@ private:
     // These represent which motor value (+1/-1) represent
     // forward/reverse in the robot.  They are used to keep
     // autonomous movement code common without yearly updates.
-    // 2020: Left forward = +1, Right forward = -1
+    // 2020: Left forward = -1, Right forward = +1
 
-    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               =  1.00;
-    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = -1.00;
-    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = -1.00;
-    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              =  1.00;
+    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               = -1.00;
+    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               =  1.00;
+    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              =  1.00;
+    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              = -1.00;
 
     ////////////////////////////////////////////////////////////////
     // Inputs from joystick:
