@@ -122,18 +122,12 @@ private:
         DIRECTIONAL_ALIGN
     };
     
-    enum EncoderDirection
+    enum RobotDirection
     {
-        FORWARD,
-        REVERSE,
-        LEFT,
-        RIGHT
-    };
-    
-    enum GyroDirection
-    {
-        LEFT_TURN,
-        RIGHT_TURN
+        ROBOT_FORWARD,
+        ROBOT_REVERSE,
+        ROBOT_LEFT,
+        ROBOT_RIGHT
     };
 
     enum GyroType
@@ -150,13 +144,6 @@ private:
         RIGHT_GUIDE     = 0x02,
         FORWARD_GUIDE   = 0x10,
         REVERSE_GUIDE   = 0x20
-    };
-    
-    enum SonarDriveDirection
-    {
-        STOPPED,
-        SONAR_FORWARD,
-        SONAR_REVERSE
     };
     
     // STRUCTS
@@ -224,11 +211,11 @@ private:
     inline void AutonomousDelay(double time);
 
     // Autonomous drive for a specified time
-    inline void AutonomousDriveSequence(double speed, double time);
+    inline void AutonomousDriveSequence(RobotDirection direction, double speed, double time);
     
     // Autonomous routines to back drive the motors to abruptly stop
-    inline void AutonomousBackDrive(EncoderDirection currentRobotDirection);
-    inline void AutonomousBackDriveTurn(GyroDirection currentGyroDirection);
+    inline void AutonomousBackDrive(RobotDirection currentDirection);
+    inline void AutonomousBackDriveTurn(RobotDirection currentDirection);
     
     // Autonomous routines
     // @todo: Make YtaRobotAutonomous a friend and move these out (requires accessor to *this)!
@@ -240,8 +227,8 @@ private:
     void AutonomousCommonBlue();
     bool AutonomousGyroLeftTurn(double destAngle, double turnSpeed);
     bool AutonomousGyroRightTurn(double destAngle, double turnSpeed);
-    void AutonomousEncoderDrive(double speed, double distance, EncoderDirection direction);
-    bool AutonomousSonarDrive(SonarDriveDirection driveDirection, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist);
+    void AutonomousEncoderDrive(double speed, double distance, RobotDirection direction);
+    bool AutonomousSonarDrive(RobotDirection direction, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist);
 
     // Routine to put things in a known state
     void InitialStateSetup();
@@ -463,6 +450,83 @@ private:
     
     static const unsigned           CAMERA_RUN_INTERVAL_MS                  = 1000U;
     static const unsigned           I2C_RUN_INTERVAL_MS                     = 240U;
+
+    // These represent which motor value (+1/-1) represent
+    // forward/reverse in the robot.  They are used to keep
+    // autonomous movement code common without yearly updates.
+    // 2020: Left forward = +1, Right forward = -1
+
+    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               =  1.00;
+    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = -1.00;
+    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = -1.00;
+    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              =  1.00;
+
+    ////////////////////////////////////////////////////////////////
+    // Inputs from joystick:
+    //
+    // Forward:     (0, -1)
+    // Backward:    (0, +1)
+    // Left:        (-1, 0)
+    // Right:       (+1, 0)
+    //
+    // Equations:
+    //
+    //     x+y   x-y   -x+y   -x-y
+    // F:   -1    +1     -1     +1
+    // B:   +1    -1     +1     -1
+    // L:   -1    -1     +1     +1
+    // R:   +1    +1     -1     -1
+    //
+    // Output to motors:
+    //
+    // Left forward/right = +1, Right forward/left = +1:
+    // Left backward/left = -1, Right backward/right = -1:
+    // x-y, -x-y
+    //
+    // Left forward/right = -1, Right forward/left = -1:
+    // Left backward/left = +1, Right backward/right = +1:
+    // -x+y, x+y
+    //
+    // Left forward/right = +1, Right forward/left = -1:
+    // Left backward/left = -1, Right backward/right = +1:
+    // x-y, x+y
+    //
+    // Left forward/right = -1, Right forward/left = +1:
+    // Left backward/left = +1, Right backward/right = -1:
+    // -x+y, -x-y
+    ////////////////////////////////////////////////////////////////
+
+    inline static constexpr double LeftDriveEquation(double xInput, double yInput)
+    {
+        double leftValue = 0.0;
+
+        if (static_cast<int>(LEFT_DRIVE_FORWARD_SCALAR) == 1)
+        {
+            leftValue = xInput - yInput;
+        }
+        else
+        {
+            leftValue = -xInput + yInput;
+        }
+        
+        return leftValue;
+    }
+
+    inline static constexpr double RightDriveEquation(double xInput, double yInput)
+    {
+        double rightValue = 0.0;
+
+        if (static_cast<int>(RIGHT_DRIVE_FORWARD_SCALAR) == 1)
+        {
+            rightValue = -xInput - yInput;
+        }
+        else
+        {
+            rightValue = xInput + yInput;
+        }
+        
+        return rightValue;
+    }
     
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
     static constexpr double         JOYSTICK_TRIM_LOWER_LIMIT               = -0.10;

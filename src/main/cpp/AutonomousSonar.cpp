@@ -5,7 +5,7 @@
 /// @details
 /// Implementation of autonomous sonar routines.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
@@ -28,7 +28,7 @@
 /// sonar sensors.
 ///
 ////////////////////////////////////////////////////////////////
-bool YtaRobot::AutonomousSonarDrive(SonarDriveDirection driveDirection, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist)
+bool YtaRobot::AutonomousSonarDrive(RobotDirection direction, SonarDriveState driveState, uint32_t destLateralDist, uint32_t destSideDist)
 {    
     // Set directions based on drive state
     uint32_t sideDirection = driveState & YtaRobotAutonomous::SONAR_DRIVE_STATE_SIDE_MASK;
@@ -218,15 +218,15 @@ bool YtaRobot::AutonomousSonarDrive(SonarDriveDirection driveDirection, SonarDri
         // only if we have not reached the maximum distance.
         if ((destGuideSensorA < destLateralDist) && (destGuideSensorB < destLateralDist))
         {
-            if (driveDirection == SONAR_FORWARD)
+            if (direction == ROBOT_FORWARD)
             {
-                m_pLeftDriveMotors->Set(leftDriveSpeed);
-                m_pRightDriveMotors->Set(rightDriveSpeed);
+                m_pLeftDriveMotors->Set(leftDriveSpeed * LEFT_DRIVE_FORWARD_SCALAR);
+                m_pRightDriveMotors->Set(rightDriveSpeed * RIGHT_DRIVE_FORWARD_SCALAR);
             }
-            else if (driveDirection == SONAR_REVERSE)
+            else if (direction == ROBOT_REVERSE)
             {
-                m_pLeftDriveMotors->Set(-leftDriveSpeed);
-                m_pRightDriveMotors->Set(-rightDriveSpeed);
+                m_pLeftDriveMotors->Set(leftDriveSpeed * LEFT_DRIVE_REVERSE_SCALAR);
+                m_pRightDriveMotors->Set(rightDriveSpeed * RIGHT_DRIVE_REVERSE_SCALAR);
             }
             else
             {
