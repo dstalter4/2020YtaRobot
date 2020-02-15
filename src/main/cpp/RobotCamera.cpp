@@ -117,7 +117,6 @@ void RobotCamera::LimelightThread()
     RobotUtils::DisplayMessage("Limelight vision thread detached.");
     
     // Get the limelight network table
-    // Static IP: 10.1.20.11
     m_LimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     
     // Put the limelight camera in driver mode.
@@ -126,13 +125,76 @@ void RobotCamera::LimelightThread()
     
     while (true)
     {
-        /*
-        // Get some information from the camera
-        double targetOffsetAngleHorizontal = m_LimelightNetworkTable->GetNumber("tx",0.0);
-        double targetOffsetAngleVertical = m_LimelightNetworkTable->GetNumber("ty",0.0);
-        double targetArea = m_LimelightNetworkTable->GetNumber("ta",0.0);
-        double targetSkew = m_LimelightNetworkTable->GetNumber("ts",0.0);
-        */
+
+
+
+
+
+        // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
+        std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+        double targetX = table->GetNumber("tx",0.0);
+        double targetY = table->GetNumber("ty",0.0);
+        double targetArea = table->GetNumber("ta",0.0);
+        double targetSkew = table->GetNumber("ts",0.0);
+        double targetValid = table->GetNumber("tv",0.0); //1==target in view
+        uint64 dataPrintCounter = 0.0;
+
+        // Just to silence warnings
+        (void)targetX;
+        (void)targetY;
+        (void)targetArea;
+        (void)targetSkew;
+        (void)targetValid;
+
+
+        // Reference: http://docs.limelightvision.io/en/latest/cs_seeking.html
+        double steering_adjust = 0.0f;
+        double Kp = 0.05f;
+        // double Ki = -0.2f;
+        double left_command = 0.0;
+        double right_command = 0.0;
+        if (targetValid == 0.0f)
+        {
+            steering_adjust = 0.2f; //No target - rotate to find target
+        }
+        else
+        {
+            // We do see the target, execute aiming code
+            float heading_error = targetX;
+            steering_adjust = Kp * targetX; //Proportional controller
+            // steering_adjust = Kp * targetX + Ki * targetX; //Proportional-Integral controller
+        }
+        left_command+=steering_adjust;
+        right_command-=steering_adjust;
+
+        if(dataPrintCounter % 100 ==0){
+            std::cout << targetX << "," << steering_adjust << std::endl;
+            dataPrintCounter=1;
+        }
+        else{
+            dataPrintCounter++;
+        }
+
+            //min speed 0.25
+            //max 0.5
+        
+
+        //hardcoding motor commands to test the motor controllers and direction
+        // left_command=0.5;
+        // right_command=0.5;
+
+//stay above 0.2 commands (new falcon motors might be better)
+
+        // Set motor speed
+        if (m_pRobotObj != nullptr)
+        {
+            if (m_pRobotObj->m_pDriverStation->IsEnabled())
+            {
+                //motors going forward
+                // RobotCamera::m_pRobotObj->m_pLeftDriveMotors->Set(-left_command);
+                // RobotCamera::m_pRobotObj->m_pRightDriveMotors->Set(right_command);
+            }
+        }
         
         // @todo: Send useful information to smart dashboard.
     }
