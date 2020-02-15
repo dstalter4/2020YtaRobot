@@ -660,9 +660,17 @@ void YtaRobot::DriveControlSequence()
     yAxisDrive = Trim((yAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
 
     // If the swap direction button was pressed, negate y value
-    if ( m_bDriveSwap )
+    if (m_bDriveSwap)
     {
-        yAxisDrive *= -1;
+        yAxisDrive *= -1.0;
+    }
+
+    // By default, the drive equations cause the x-axis input
+    // to be flipped when going backward.  Correct that here,
+    // if configured.  Remember, y-axis full forward is negative.
+    if ((!USE_INVERTED_REVERSE_CONTROLS) && (yAxisDrive > 0.0))
+    {
+        xAxisDrive *= -1.0;
     }
     
     if (SLOW_DRIVE_ENABLED)

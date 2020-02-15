@@ -443,6 +443,7 @@ private:
     static const int                QUADRATURE_ENCODING_ROTATIONS           = 4096;
     static const char               NULL_CHARACTER                          = '\0';
     
+    static const bool               USE_INVERTED_REVERSE_CONTROLS           = false;
     static const bool               SLOW_DRIVE_ENABLED                      = false;
     static const bool               DIRECTIONAL_ALIGN_ENABLED               = false;
     static const bool               DIRECTIONAL_INCH_ENABLED                = false;
