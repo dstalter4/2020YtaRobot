@@ -443,7 +443,7 @@ private:
     static const int                QUADRATURE_ENCODING_ROTATIONS           = 4096;
     static const char               NULL_CHARACTER                          = '\0';
     
-    static const bool               USE_INVERTED_REVERSE_CONTROLS           = false;
+    static const bool               USE_INVERTED_REVERSE_CONTROLS           = true;
     static const bool               SLOW_DRIVE_ENABLED                      = false;
     static const bool               DIRECTIONAL_ALIGN_ENABLED               = false;
     static const bool               DIRECTIONAL_INCH_ENABLED                = false;
@@ -455,11 +455,11 @@ private:
     // These represent which motor value (+1/-1) represent
     // forward/reverse in the robot.  They are used to keep
     // autonomous movement code common without yearly updates.
-    // 2020: Left forward = -1, Right forward = +1
+    // 2020: Left forward = -1, Right forward = +1 (Practice bot is reversed.)
 
     static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               = -1.00;
-    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               =  1.00;
-    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              =  1.00;
+    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = +1.00;
+    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = +1.00;
     static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              = -1.00;
 
     ////////////////////////////////////////////////////////////////
@@ -528,6 +528,8 @@ private:
         
         return rightValue;
     }
+
+    inline constexpr double ConvertCelsiusToFahrenheit(double degreesC) { return ((degreesC * 9.0/5.0) + 32.0); }
     
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
     static constexpr double         JOYSTICK_TRIM_LOWER_LIMIT               = -0.10;

@@ -691,10 +691,16 @@ void YtaRobot::DriveControlSequence()
     m_pLeftDriveMotors->Set(leftSpeed);
     m_pRightDriveMotors->Set(rightSpeed);
 
+    // Retrieve motor temperatures
+    double leftTemp = ConvertCelsiusToFahrenheit(m_pLeftDriveMotors->GetMotorObject()->GetTemperature());
+    double rightTemp = ConvertCelsiusToFahrenheit(m_pRightDriveMotors->GetMotorObject()->GetTemperature());
+
     if (RobotUtils::DEBUG_PRINTS)
     {
         SmartDashboard::PutNumber("Left drive speed", leftSpeed);
         SmartDashboard::PutNumber("Right drive speed", rightSpeed);
+        SmartDashboard::PutNumber("Left temperature (F)", leftTemp);
+        SmartDashboard::PutNumber("Right temperature (F)", rightTemp);
     }
 }
 
