@@ -59,6 +59,7 @@ using namespace frc;
 class YtaRobot : public TimedRobot
 {
 public:
+    friend class RobotCamera;
 
     // MEMBER FUNCTIONS
     

@@ -15,6 +15,7 @@
 #include "cameraserver/CameraServer.h"          // for CameraServer instance
 #include "networktables/NetworkTable.h"         // for network tables
 #include "networktables/NetworkTableInstance.h" // for network table instance
+#include "YtaRobot.hpp"
 
 // C++ INCLUDES
 #include "RobotCamera.hpp"                      // for class declaration
@@ -44,7 +45,9 @@ RobotCamera::VisionTargetReport                 RobotCamera::m_VisionTargetRepor
 bool                                            RobotCamera::m_bDoFullProcessing;
 int                                             RobotCamera::m_HeartBeat;
 const char *                                    RobotCamera::CAMERA_OUTPUT_NAME = "Camera Output";
+double                                          RobotCamera::integSum = 0.0;
 
+// YtaRobot * RobotCamera::m_pRobotObj = nullptr;
 
 ////////////////////////////////////////////////////////////////
 /// @method RobotCamera::UsbCameraInfo::UsbCameraInfo
@@ -125,11 +128,6 @@ void RobotCamera::LimelightThread()
     
     while (true)
     {
-
-
-
-
-
         // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
         std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
         double targetX = table->GetNumber("tx",0.0);
@@ -137,7 +135,7 @@ void RobotCamera::LimelightThread()
         double targetArea = table->GetNumber("ta",0.0);
         double targetSkew = table->GetNumber("ts",0.0);
         double targetValid = table->GetNumber("tv",0.0); //1==target in view
-        uint64 dataPrintCounter = 0.0;
+        
 
         // Just to silence warnings
         (void)targetX;
@@ -148,55 +146,77 @@ void RobotCamera::LimelightThread()
 
 
         // Reference: http://docs.limelightvision.io/en/latest/cs_seeking.html
-        double steering_adjust = 0.0f;
-        double Kp = 0.05f;
-        // double Ki = -0.2f;
-        double left_command = 0.0;
-        double right_command = 0.0;
-        if (targetValid == 0.0f)
+        double steering_adjust = 0.0;
+        // double Kp = 0.05; //oscillates old robot
+        double left_command=0.0, right_command=0.0;
+        if (targetValid == 0.0)
         {
-            steering_adjust = 0.2f; //No target - rotate to find target
+            steering_adjust = 0.2; //No target - rotate to find target
+            integSum = 0.0;
         }
         else
         {
             // We do see the target, execute aiming code
-            float heading_error = targetX;
-            steering_adjust = Kp * targetX; //Proportional controller
-            // steering_adjust = Kp * targetX + Ki * targetX; //Proportional-Integral controller
-        }
-        left_command+=steering_adjust;
-        right_command-=steering_adjust;
+            double heading_error = targetX;
+            // steering_adjust = Kp * targetX; //Proportional controller
+            integSum += heading_error;// (heading_error+last_heading_error);
 
-        if(dataPrintCounter % 100 ==0){
-            std::cout << targetX << "," << steering_adjust << std::endl;
-            dataPrintCounter=1;
-        }
-        else{
-            dataPrintCounter++;
+            double limitAbsVal = 10000;
+
+            if(integSum > limitAbsVal){
+                integSum = limitAbsVal;
+            }
+            if(integSum < -limitAbsVal){
+                integSum = -limitAbsVal;
+            }
+
+            steering_adjust = Kp*targetX + Ki*integSum; //Proportional-Integral controller
+
+            //remmember to limit the integration term
+            //reset the integration term when target is out of the frame
+
+
+        // // left_command+=steering_adjust;
+        // // right_command-=steering_adjust;
+
         }
 
-            //min speed 0.25
-            //max 0.5
-        
 
+        left_command-=steering_adjust;
+        right_command+=steering_adjust;
+
+
+        ////min speed 0.25
+        ////max 0.5
         //hardcoding motor commands to test the motor controllers and direction
         // left_command=0.5;
         // right_command=0.5;
 
 //stay above 0.2 commands (new falcon motors might be better)
 
+
+
+        YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
         // Set motor speed
-        if (m_pRobotObj != nullptr)
+        if (pRobotObj != nullptr)
         {
-            if (m_pRobotObj->m_pDriverStation->IsEnabled())
+            if (pRobotObj->m_pDriverStation->IsEnabled())
             {
-                //motors going forward
-                // RobotCamera::m_pRobotObj->m_pLeftDriveMotors->Set(-left_command);
-                // RobotCamera::m_pRobotObj->m_pRightDriveMotors->Set(right_command);
+                //these are the motor commands that go to the YtaRobot.cpp class object
+
+                pRobotObj->m_pLeftDriveMotors->Set(-left_command);
+                pRobotObj->m_pRightDriveMotors->Set(right_command);
             }
         }
+
+
         
         // @todo: Send useful information to smart dashboard.
+        // SmartDashboard::PutNumber("Color sensor IR distance", irDistance);
+        SmartDashboard::PutNumber("steering_adjust", steering_adjust);
+        SmartDashboard::PutNumber("targetX", targetX);
+        SmartDashboard::PutNumber("integSum", integSum);
+        
     }
 }
 

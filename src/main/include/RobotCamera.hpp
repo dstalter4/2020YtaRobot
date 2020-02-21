@@ -221,6 +221,10 @@ private:
     static constexpr double                     CALIBRATED_CAMERA_ANGLE             = 21.5778173;
     static constexpr double                     DEGREES_TO_RADIANS                  = M_PI / 180.0;
     static constexpr double                     DECIMAL_TO_PERCENT                  = 100.0;
+
+    static constexpr double                     Ki                                  = 0.0001;
+    static constexpr double                     Kp                                  = 0.001;
+    static double                                                integSum;
 };
 
 
