@@ -307,6 +307,7 @@ void YtaRobot::TeleopInit()
     
     // Tele-op won't do detailed processing of the images unless instructed to
     RobotCamera::SetFullProcessing(false);
+    RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
     
     // Indicate to the I2C thread to get data less often
     RobotI2c::SetThreadUpdateRate(I2C_RUN_INTERVAL_MS);
