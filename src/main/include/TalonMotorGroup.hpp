@@ -68,6 +68,9 @@ public:
                      FeedbackDevice sensor = FeedbackDevice::None
                    );
 
+    // Retrieve a specific motor object
+    TalonType * GetMotorObject(int canId = GROUP_MASTER_CAN_ID);
+
     // Adds a new motor to a group
     bool AddMotorToGroup(MotorGroupControlMode controlMode);
     
@@ -103,6 +106,7 @@ private:
     };
 
     static const int MAX_NUMBER_OF_MOTORS = 4;
+    static const int GROUP_MASTER_CAN_ID = 0xFF;
 
     // Member variables
     int m_NumMotors;                                        // Number of motors in the group
@@ -116,6 +120,48 @@ private:
     TalonMotorGroup( const TalonMotorGroup& ) = delete;
     TalonMotorGroup & operator=( const TalonMotorGroup& ) = delete;
 };
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method TalonMotorGroup::GetMotorObject
+///
+/// Retrieves a specific Talon motor object from the motor
+/// group.  By default it will return the first motor object in
+/// the group (the master Talon).  If a CAN ID is specified, it
+/// will retrieve that object instead.  This purpose of this
+/// function is to allow robot code to make specific calls on a
+/// motor object that may only apply to one motor in a group or
+/// a specific motor type since this is a template class.
+///
+////////////////////////////////////////////////////////////////
+template <class TalonType>
+TalonType * TalonMotorGroup<TalonType>::GetMotorObject(int canId)
+{
+    TalonType * pTalonObject = nullptr;
+
+    // By default, return the first object in the group
+    if (canId == GROUP_MASTER_CAN_ID)
+    {
+        pTalonObject = m_pMotorsInfo[0]->m_pTalon;
+    }
+    // If a specific CAN ID was given
+    else
+    {
+        // Loop through the motors
+        for (int i = 0; i < m_NumMotors; i++)
+        {
+            // Check if this is the right motor
+            if (m_pMotorsInfo[i]->m_CanId == canId)
+            {
+                pTalonObject = m_pMotorsInfo[i]->m_pTalon;
+                break;
+            }
+        }
+    }
+
+    return pTalonObject;
+}
 
 
 
