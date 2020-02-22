@@ -59,6 +59,7 @@ using namespace frc;
 class YtaRobot : public TimedRobot
 {
 public:
+    friend class RobotCamera;
 
     // MEMBER FUNCTIONS
     
@@ -191,12 +192,6 @@ private:
     
     // Checks for a robot state change and logs a message if so
     inline void CheckAndUpdateRobotMode(RobotMode robotMode);
-    
-    // Ensures a number is between the upper and lower bounds
-    inline double Limit( double num, double upper, double lower );
-    
-    // Trims a number to be in between the upper and lower bounds
-    inline double Trim( double num, double upper, double lower );
 
     // Grabs a value from a sonar sensor individually
     inline double GetSonarValue(Ultrasonic * pSensor);
@@ -776,50 +771,6 @@ void YtaRobot::CheckAndUpdateRobotMode(RobotMode robotMode)
         m_RobotMode = robotMode;
         RobotUtils::DisplayMessage(MODE_CHANGE_ENTER_MESSAGES[m_RobotMode]);
     }
-}
-
-
-
-////////////////////////////////////////////////////////////////
-/// @method YtaRobot::Limit
-///
-/// This method is used to prevent a value outside the range
-/// specified by upper and lower from being sent to physical
-/// devices.
-///
-////////////////////////////////////////////////////////////////
-inline double YtaRobot::Limit( double num, double upper, double lower )
-{
-    if ( num > upper )
-    {
-        return upper;
-    }
-    else if ( num < lower )
-    {
-        return lower;
-    }
-
-    return num;
-}
-
-
-
-////////////////////////////////////////////////////////////////
-/// @method YtaRobot::Trim
-///
-/// This method is used to ensure a signal value is above a
-/// certain threshold to ensure there is actual input to a
-/// device and not just noise/jitter.
-///
-////////////////////////////////////////////////////////////////
-inline double YtaRobot::Trim( double num, double upper, double lower )
-{
-    if ( (num < upper) && (num > lower) )
-    {
-        return 0.0;
-    }
-    
-    return num;
 }
 
 

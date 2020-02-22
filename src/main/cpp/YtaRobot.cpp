@@ -22,7 +22,7 @@
 #include "YtaRobot.hpp"                 // for class declaration (and other headers)
 #include "RobotCamera.hpp"              // for interacting with cameras
 #include "RobotI2c.hpp"                 // for I2cThread()
-#include "RobotUtils.hpp"               // for DisplayMessage()
+#include "RobotUtils.hpp"               // for Trim(), Limit() and DisplayMessage()
 
 // STATIC MEMBER VARIABLES
 YtaRobot * YtaRobot::m_pThis;
@@ -307,6 +307,7 @@ void YtaRobot::TeleopInit()
     
     // Tele-op won't do detailed processing of the images unless instructed to
     RobotCamera::SetFullProcessing(false);
+    RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
     
     // Indicate to the I2C thread to get data less often
     RobotI2c::SetThreadUpdateRate(I2C_RUN_INTERVAL_MS);
@@ -656,8 +657,8 @@ void YtaRobot::DriveControlSequence()
     }
     
     // Make sure axes inputs clear a certain threshold.  This will help to drive straight.
-    xAxisDrive = Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
-    yAxisDrive = Trim((yAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+    xAxisDrive = RobotUtils::Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+    yAxisDrive = RobotUtils::Trim((yAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
 
     // If the swap direction button was pressed, negate y value
     if (m_bDriveSwap)
@@ -677,15 +678,15 @@ void YtaRobot::DriveControlSequence()
     {
         // Get the slow drive control joystick input
         double xAxisSlowDrive = m_pDriveJoystick->GetRawAxis(DRIVE_SLOW_X_AXIS);
-        xAxisSlowDrive = Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+        xAxisSlowDrive = RobotUtils::Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
         
         // If the normal x-axis drive is non-zero, use it.  Otherwise use the slow drive input, which could also be zero.
         xAxisDrive = (xAxisDrive != 0.0) ? xAxisDrive : xAxisSlowDrive;
     }
     
     // Filter motor speeds
-    double leftSpeed = Limit((LeftDriveEquation(xAxisDrive, yAxisDrive)), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
-    double rightSpeed = Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double leftSpeed = RobotUtils::Limit((LeftDriveEquation(xAxisDrive, yAxisDrive)), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double rightSpeed = RobotUtils::Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
     
     // Set motor speed
     m_pLeftDriveMotors->Set(leftSpeed);

@@ -5,7 +5,7 @@
 /// @details
 /// Contains declarations of utility macros/routines for the robot code.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef ROBOTUTILS_HPP
@@ -57,7 +57,7 @@ namespace RobotUtils
     static const bool DEBUG_PRINTS = true;
     
     ////////////////////////////////////////////////////////////////
-    /// @method YtaRobot::DisplayMessage
+    /// @method RobotUtils::DisplayMessage
     ///
     /// Displays a message to the RioLog as long as debug prints are
     /// enabled.
@@ -72,7 +72,7 @@ namespace RobotUtils
     }
     
     ////////////////////////////////////////////////////////////////
-    /// @method YtaRobot::DisplayMessage
+    /// @method RobotUtils::DisplayMessage
     ///
     /// Displays a message to the RioLog as long as debug prints are
     /// enabled.
@@ -93,6 +93,46 @@ namespace RobotUtils
             
             va_end(argPtr);
         }
+    }
+
+    ////////////////////////////////////////////////////////////////
+    /// @method RobotUtils::Limit
+    ///
+    /// This method is used to prevent a value outside the range
+    /// specified by upper and lower from being sent to physical
+    /// devices.
+    ///
+    ////////////////////////////////////////////////////////////////
+    inline double Limit( double num, double upper, double lower )
+    {
+        if ( num > upper )
+        {
+            return upper;
+        }
+        else if ( num < lower )
+        {
+            return lower;
+        }
+
+        return num;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    /// @method RobotUtils::Trim
+    ///
+    /// This method is used to ensure a signal value is above a
+    /// certain threshold to ensure there is actual input to a
+    /// device and not just noise/jitter.
+    ///
+    ////////////////////////////////////////////////////////////////
+    inline double Trim( double num, double upper, double lower )
+    {
+        if ( (num < upper) && (num > lower) )
+        {
+            return 0.0;
+        }
+        
+        return num;
     }
     
 }
