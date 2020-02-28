@@ -239,7 +239,10 @@ void RobotCamera::LimelightThread()
     RobotUtils::DisplayMessage("Limelight vision thread detached.");
     
     // Get the limelight network table
-    m_pLimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    while (m_pLimelightNetworkTable == nullptr)
+    {
+        m_pLimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    }
     
     // The limelight camera mode will be set by autonomous or teleop
     
