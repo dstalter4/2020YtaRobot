@@ -5,7 +5,7 @@
 /// @details
 /// A class designed to support camera functionality on the robot.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
@@ -20,9 +20,10 @@
 // C++ INCLUDES
 #include "RobotCamera.hpp"                      // for class declaration
 #include "RobotUtils.hpp"                       // for DisplayMessage(), DisplayFormattedMessage()
+#include "YtaRobot.hpp"                         // for GetRobotInstance()
 
 // STATIC MEMBER DATA
-std::shared_ptr<NetworkTable>                   RobotCamera::m_LimelightNetworkTable;
+std::shared_ptr<NetworkTable>                   RobotCamera::m_pLimelightNetworkTable;
 RobotCamera::UsbCameraStorage                   RobotCamera::m_UsbCameras;
 RobotCamera::UsbCameraInfo *                    RobotCamera::m_pCurrentUsbCamera;
 cs::CvSource                                    RobotCamera::m_CameraOutput;
@@ -47,7 +48,131 @@ int                                             RobotCamera::m_HeartBeat;
 const char *                                    RobotCamera::CAMERA_OUTPUT_NAME = "Camera Output";
 double                                          RobotCamera::integSum = 0.0;
 
+<<<<<<< HEAD
 // YtaRobot * RobotCamera::m_pRobotObj = nullptr;
+=======
+Timer                                           RobotCamera::AutonomousCamera::m_AutoCameraTimer;
+double                                          RobotCamera::AutonomousCamera::m_IntegralSum = 0.0;
+
+
+////////////////////////////////////////////////////////////////
+/// @method RobotCamera::AutonomousCamera::AlignToTarget
+///
+/// This method tries to automatically align the robot to a
+/// target based on feedback from the camera.  It will execute
+/// until it finds the target or a safety timer expires.
+///
+////////////////////////////////////////////////////////////////
+bool RobotCamera::AutonomousCamera::AlignToTarget(SeekDirection seekDirection, const bool bEnableMotors)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+    bool bTargetFound = false;
+    m_AutoCameraTimer.Start();
+
+    while (!bTargetFound && (m_AutoCameraTimer.Get() < MAX_CAMERA_SEARCH_TIME_S))
+    {
+        // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        //double targetY = m_pLimelightNetworkTable->GetNumber("ty", 0.0);
+        //double targetArea = m_pLimelightNetworkTable->GetNumber("ta", 0.0);
+        //double targetSkew = m_pLimelightNetworkTable->GetNumber("ts", 0.0);
+
+        // 1 = target in view, 0 = target not in view
+        bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+        // Reference: http://docs.limelightvision.io/en/latest/cs_seeking.html
+        double steeringAdjust = 0.0;
+        double leftCommand = 0.0;
+        double rightCommand = 0.0;
+
+        if (!bTargetValid)
+        {
+            constexpr double STARTING_SEEK_VALUE = 0.2;
+            
+            // No target - rotate to find target
+            if (seekDirection == SEEK_LEFT)
+            {
+                steeringAdjust = STARTING_SEEK_VALUE;
+            }
+            else if (seekDirection == SEEK_RIGHT)
+            {
+                steeringAdjust = -STARTING_SEEK_VALUE;
+            }
+            else
+            {
+            }
+            
+            m_IntegralSum = 0.0;
+        }
+        else
+        {
+            // We do see the target, execute aiming code
+
+            double headingError = targetX;
+            // steeringAdjust = Kp * targetX;   //Proportional controller
+            m_IntegralSum += headingError;      // (heading error + last heading error);
+
+            m_IntegralSum = RobotUtils::Limit(m_IntegralSum, INTEGRAL_SUM_LIMIT_VALUE, -INTEGRAL_SUM_LIMIT_VALUE);
+
+            // Proportional-Integral controller
+            steeringAdjust = (KP * targetX) + (KI * m_IntegralSum);
+
+            // Remember to limit the integration term
+            // Reset the integration term when target is out of the frame
+        }
+
+        // The left and right commands both use addition here because
+        // the scaling constants will correct the direction.
+        leftCommand -= steeringAdjust;
+        rightCommand += steeringAdjust;
+        
+        // Make sure we don't spin the motors too fast
+        leftCommand = RobotUtils::Limit(leftCommand, MAX_SEEK_MOTOR_SPEED, -MAX_SEEK_MOTOR_SPEED);
+        rightCommand = RobotUtils::Limit(rightCommand, MAX_SEEK_MOTOR_SPEED, -MAX_SEEK_MOTOR_SPEED);
+
+        // Need a way to know when the target is found
+        if (bTargetValid && (leftCommand == 0.0) && (rightCommand == 0.0))
+        {
+            bTargetFound = true;
+            break;
+        }
+
+        // min speed 0.25
+        // max 0.5
+        // hardcoding motor commands to test the motor controllers and direction
+        // leftCommand=0.5;
+        // rightCommand=0.5;
+
+        // stay above 0.2 commands (new falcon motors might be better)
+
+        // Set motor speed
+        if (bEnableMotors)
+        {
+            // Steer the robot
+            pRobotObj->m_pLeftDriveMotors->Set(-leftCommand);
+            pRobotObj->m_pRightDriveMotors->Set(rightCommand);
+        }
+
+        // Send useful information to smart dashboard.
+        SmartDashboard::PutNumber("Steering adjust", steeringAdjust);
+        SmartDashboard::PutNumber("targetX", targetX);
+        SmartDashboard::PutNumber("Integral sum", m_IntegralSum);
+        SmartDashboard::PutNumber("Target valid", bTargetValid);
+    }
+
+    // Motors off
+    pRobotObj->m_pLeftDriveMotors->Set(0.0);
+    pRobotObj->m_pRightDriveMotors->Set(0.0);
+
+    // Clean up the timer
+    m_AutoCameraTimer.Stop();
+    m_AutoCameraTimer.Reset();
+
+    return bTargetFound;
+}
+
+
+>>>>>>> master
 
 ////////////////////////////////////////////////////////////////
 /// @method RobotCamera::UsbCameraInfo::UsbCameraInfo
@@ -120,14 +245,20 @@ void RobotCamera::LimelightThread()
     RobotUtils::DisplayMessage("Limelight vision thread detached.");
     
     // Get the limelight network table
+<<<<<<< HEAD
     m_LimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+=======
+    while (m_pLimelightNetworkTable == nullptr)
+    {
+        m_pLimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+    }
+>>>>>>> master
     
-    // Put the limelight camera in driver mode.
-    // 0 = vision procressor, 1 = driver camera
-    m_LimelightNetworkTable->PutNumber("camMode", 1);
+    // The limelight camera mode will be set by autonomous or teleop
     
     while (true)
     {
+<<<<<<< HEAD
         // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
         std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
         double targetX = table->GetNumber("tx",0.0);
@@ -217,6 +348,8 @@ void RobotCamera::LimelightThread()
         SmartDashboard::PutNumber("targetX", targetX);
         SmartDashboard::PutNumber("integSum", integSum);
         
+=======
+>>>>>>> master
     }
 }
 

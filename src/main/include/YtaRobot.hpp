@@ -192,12 +192,6 @@ private:
     
     // Checks for a robot state change and logs a message if so
     inline void CheckAndUpdateRobotMode(RobotMode robotMode);
-    
-    // Ensures a number is between the upper and lower bounds
-    inline double Limit( double num, double upper, double lower );
-    
-    // Trims a number to be in between the upper and lower bounds
-    inline double Trim( double num, double upper, double lower );
 
     // Grabs a value from a sonar sensor individually
     inline double GetSonarValue(Ultrasonic * pSensor);
@@ -266,8 +260,20 @@ private:
     // Main sequence for vision processing
     void CameraSequence();
 
+    // Main sequence for the intake
+    void IntakeSequence();
+
+    // Main sequence for the shooter
+    void ShooterSequence();
+
+    // Main sequence for the turret
+    void TurretSequence();
+
     // Main sequence for interacting with the color sensor
     void ColorSequence();
+
+    // Main sequence for hanging
+    void HangSequence();
     
     // Test routines for trying out experimental code
     void AutonomousTestCode();
@@ -295,6 +301,11 @@ private:
     // Motors
     TalonMotorGroup<TalonFX> *      m_pLeftDriveMotors;                     // Left drive motor control
     TalonMotorGroup<TalonFX> *      m_pRightDriveMotors;                    // Right drive motor control
+    TalonMotorGroup<TalonFX> *      m_pShooterMotors;                       // Shooter motor control
+    TalonFX *                       m_pWinchMotor;                          // Winch motor control
+    TalonSRX *                      m_pIntakeMotor;                         // Intake motor control
+    TalonSRX *                      m_pTurretMotor;                         // Turrent motor control
+    TalonSRX *                      m_pColorWheelMotor;                     // Color wheel motor control
     
     // Spike Relays
     Relay *                         m_pLedsEnableRelay;                     // Controls whether the LEDs will light up at all
@@ -303,6 +314,9 @@ private:
     Relay *                         m_pBlueLedRelay;                        // Controls whether or not the blue LEDs are lit up
     
     // Digital I/O
+    DigitalInput *                  m_pTurretLeftHallSensor;                // Left magnetic sensor on the turret (270 degrees)
+    DigitalInput *                  m_pTurretCenterHallSensor;              // Bottom magnetic sensor on the turret (180 degrees)
+    DigitalInput *                  m_pTurretRightHallSensor;               // Right magnetic sensor on the turret (90 degrees)
     DigitalOutput *                 m_pDebugOutput;                         // Debug assist output
     
     // Analog I/O
@@ -311,7 +325,14 @@ private:
     // Solenoids
     // Note: No compressor related objects required,
     // instantiating a solenoid gets that for us.
-    // (none)
+    DoubleSolenoid *                m_pIntakeSolenoid;                      // Controls raising/lowering the intake mechanism
+    DoubleSolenoid *                m_pShooterSolenoid;                     // Controls spacing balls in the intake/shoot process
+    DoubleSolenoid *                m_pHangerRaiseSolenoid;                 // Controls raising/lowering the hanging mechanism
+    DoubleSolenoid *                m_pHangerExtendSolenoid;                // Controls extending/retracting the hanging mechanism
+    TriggerChangeValues *           m_pIntakeSolenoidTrigger;
+    TriggerChangeValues *           m_pShooterSolenoidTrigger;
+    TriggerChangeValues *           m_pHangerRaiseSolenoidTrigger;
+    TriggerChangeValues *           m_pHangerExtendSolenoidTrigger;
     
     // Servos
     // (none)
@@ -389,6 +410,10 @@ private:
     // Driver buttons
     static const int                DRIVE_SLOW_X_AXIS                       = DRIVE_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.RIGHT_X_AXIS;
     static const int                DRIVE_SLOW_Y_AXIS                       = DRIVE_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.RIGHT_Y_AXIS;
+    static const int                HANG_RAISE_SOLENOID_CHANGE_STATE_BUTTON = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
+    static const int                HANG_EXT_SOLENOID_CHANGE_STATE_BUTTON   = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUTTON;
+    static const int                WINCH_FORWARD_BUTTON                    = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUMPER;
+    static const int                WINCH_REVERSE_BUTTON                    = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUMPER;
     static const int                CAMERA_TOGGLE_FULL_PROCESSING_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 11 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.SELECT;
     static const int                CAMERA_TOGGLE_PROCESSED_IMAGE_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 12 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.START;
     static const int                SELECT_FRONT_CAMERA_BUTTON              = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 13 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_STICK_CLICK;
@@ -401,11 +426,23 @@ private:
     static const int                DRIVE_CONTROLS_INCH_RIGHT_BUTTON        = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     
     // Control buttons
+    static const int                TURRET_CONTROL_AXIS                     = CONTROL_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.LEFT_X_AXIS;
+    static const int                INTAKE_SOLENOID_CHANGE_STATE_BUTTON     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUTTON;
+    static const int                SHOOTER_SOLENOID_CHANGE_STATE_BUTTON    = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON;
+    static const int                INTAKE_FORWARD_BUTTON                   = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUMPER;
+    static const int                INTAKE_REVERSE_BUTTON                   = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUMPER;
+    static const int                SHOOTER_SLOW_BUTTON                     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUTTON;
+    static const int                SHOOTER_FAST_BUTTON                     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
     static const int                ESTOP_BUTTON                            = (CONTROL_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 :  CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
 
     // CAN Signals
     static const int                LEFT_MOTORS_CAN_START_ID                = 1;
     static const int                RIGHT_MOTORS_CAN_START_ID               = 3;
+    static const int                SHOOTER_MOTORS_CAN_START_ID             = 5;
+    static const int                WINCH_MOTOR_CAN_ID                      = 7;
+    static const int                INTAKE_MOTOR_CAN_ID                     = 8;
+    static const int                TURRET_MOTOR_CAN_ID                     = 9;
+    static const int                COLOR_WHEEL_MOTOR_CAN_ID                = 10;
 
     // PWM Signals
     // (none)
@@ -417,13 +454,23 @@ private:
     static const int                BLUE_LED_RELAY_ID                       = 3;
     
     // Digital I/O Signals
+    static const int                TURRET_LEFT_HALL_SENSOR_DIO_CHANNEL     = 0;
+    static const int                TURRET_CENTER_HALL_SENSOR_DIO_CHANNEL   = 1;
+    static const int                TURRET_RIGHT_HALL_SENSOR_DIO_CHANNEL    = 2;
     static const int                DEBUG_OUTPUT_DIO_CHANNEL                = 7;
     
     // Analog I/O Signals
     // (none)
     
     // Solenoid Signals
-    // (none)
+    static const int                INTAKE_SOLENOID_FORWARD_CHANNEL         = 0;
+    static const int                INTAKE_SOLENOID_REVERSE_CHANNEL         = 1;
+    static const int                SHOOTER_SOLENOID_FORWARD_CHANNEL        = 2;
+    static const int                SHOOTER_SOLENOID_REVERSE_CHANNEL        = 3;
+    static const int                HANGER_RAISE_SOLENOID_FORWARD_CHANNEL   = 4;
+    static const int                HANGER_RAISE_SOLENOID_REVERSE_CHANNEL   = 5;
+    static const int                HANGER_EXTEND_SOLENOID_FORWARD_CHANNEL  = 6;
+    static const int                HANGER_EXTEND_SOLENOID_REVERSE_CHANNEL  = 7;
     
     // Misc
     const std::string               AUTO_ROUTINE_1_STRING                   = "Autonomous Routine 1";
@@ -436,6 +483,7 @@ private:
     static const int                SINGLE_MOTOR                            = 1;
     static const int                NUMBER_OF_LEFT_DRIVE_MOTORS             = 2;
     static const int                NUMBER_OF_RIGHT_DRIVE_MOTORS            = 2;
+    static const int                NUMBER_OF_SHOOTER_MOTORS                = 2;
     static const int                ANGLE_90_DEGREES                        = 90;
     static const int                ANGLE_180_DEGREES                       = 180;
     static const int                ANGLE_360_DEGREES                       = 360;
@@ -444,6 +492,7 @@ private:
     static const int                QUADRATURE_ENCODING_ROTATIONS           = 4096;
     static const char               NULL_CHARACTER                          = '\0';
     
+    static const bool               USE_INVERTED_REVERSE_CONTROLS           = true;
     static const bool               SLOW_DRIVE_ENABLED                      = false;
     static const bool               DIRECTIONAL_ALIGN_ENABLED               = false;
     static const bool               DIRECTIONAL_INCH_ENABLED                = false;
@@ -455,12 +504,12 @@ private:
     // These represent which motor value (+1/-1) represent
     // forward/reverse in the robot.  They are used to keep
     // autonomous movement code common without yearly updates.
-    // 2020: Left forward = +1, Right forward = -1
+    // 2020: Left forward = -1, Right forward = +1 (Practice bot is reversed.)
 
-    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               =  1.00;
-    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = -1.00;
-    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = -1.00;
-    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              =  1.00;
+    static constexpr double         LEFT_DRIVE_FORWARD_SCALAR               = -1.00;
+    static constexpr double         LEFT_DRIVE_REVERSE_SCALAR               = +1.00;
+    static constexpr double         RIGHT_DRIVE_FORWARD_SCALAR              = +1.00;
+    static constexpr double         RIGHT_DRIVE_REVERSE_SCALAR              = -1.00;
 
     ////////////////////////////////////////////////////////////////
     // Inputs from joystick:
@@ -528,13 +577,21 @@ private:
         
         return rightValue;
     }
+
+    inline constexpr double ConvertCelsiusToFahrenheit(double degreesC) { return ((degreesC * 9.0/5.0) + 32.0); }
     
+    static constexpr double         TURRET_MOTOR_SCALING_VALUE              = -0.50;
+    static constexpr double         INTAKE_MOTOR_SPEED                      =  1.00;
+    static constexpr double         SHOOTER_SLOW_MOTOR_SPEED                =  0.75;
+    static constexpr double         SHOOTER_FAST_MOTOR_SPEED                =  0.85;
+    static constexpr double         WINCH_MOTOR_SPEED                       =  1.00;
+
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
     static constexpr double         JOYSTICK_TRIM_LOWER_LIMIT               = -0.10;
     static constexpr double         CONTROL_THROTTLE_VALUE_RANGE            =  0.65;
     static constexpr double         CONTROL_THROTTLE_VALUE_BASE             =  0.35;
-    static constexpr double         DRIVE_THROTTLE_VALUE_RANGE              =  0.65;
-    static constexpr double         DRIVE_THROTTLE_VALUE_BASE               =  0.35;
+    static constexpr double         DRIVE_THROTTLE_VALUE_RANGE              =  1.00;//0.65;
+    static constexpr double         DRIVE_THROTTLE_VALUE_BASE               =  0.00;//0.35;
     static constexpr double         DRIVE_SLOW_THROTTLE_VALUE               =  0.35;
     static constexpr double         DRIVE_MOTOR_UPPER_LIMIT                 =  1.00;
     static constexpr double         DRIVE_MOTOR_LOWER_LIMIT                 = -1.00;
@@ -774,50 +831,6 @@ void YtaRobot::CheckAndUpdateRobotMode(RobotMode robotMode)
         m_RobotMode = robotMode;
         RobotUtils::DisplayMessage(MODE_CHANGE_ENTER_MESSAGES[m_RobotMode]);
     }
-}
-
-
-
-////////////////////////////////////////////////////////////////
-/// @method YtaRobot::Limit
-///
-/// This method is used to prevent a value outside the range
-/// specified by upper and lower from being sent to physical
-/// devices.
-///
-////////////////////////////////////////////////////////////////
-inline double YtaRobot::Limit( double num, double upper, double lower )
-{
-    if ( num > upper )
-    {
-        return upper;
-    }
-    else if ( num < lower )
-    {
-        return lower;
-    }
-
-    return num;
-}
-
-
-
-////////////////////////////////////////////////////////////////
-/// @method YtaRobot::Trim
-///
-/// This method is used to ensure a signal value is above a
-/// certain threshold to ensure there is actual input to a
-/// device and not just noise/jitter.
-///
-////////////////////////////////////////////////////////////////
-inline double YtaRobot::Trim( double num, double upper, double lower )
-{
-    if ( (num < upper) && (num > lower) )
-    {
-        return 0.0;
-    }
-    
-    return num;
 }
 
 

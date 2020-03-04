@@ -22,7 +22,7 @@
 #include "YtaRobot.hpp"                 // for class declaration (and other headers)
 #include "RobotCamera.hpp"              // for interacting with cameras
 #include "RobotI2c.hpp"                 // for I2cThread()
-#include "RobotUtils.hpp"               // for DisplayMessage()
+#include "RobotUtils.hpp"               // for Trim(), Limit() and DisplayMessage()
 
 // STATIC MEMBER VARIABLES
 YtaRobot * YtaRobot::m_pThis;
@@ -47,11 +47,27 @@ YtaRobot::YtaRobot() :
     m_pControlXboxGameSir               (new XboxController(CONTROL_JOYSTICK_PORT)),
     m_pLeftDriveMotors                  (new TalonMotorGroup<TalonFX>(NUMBER_OF_LEFT_DRIVE_MOTORS, LEFT_MOTORS_CAN_START_ID, MotorGroupControlMode::FOLLOW, FeedbackDevice::CTRE_MagEncoder_Relative)),
     m_pRightDriveMotors                 (new TalonMotorGroup<TalonFX>(NUMBER_OF_RIGHT_DRIVE_MOTORS, RIGHT_MOTORS_CAN_START_ID, MotorGroupControlMode::FOLLOW, FeedbackDevice::CTRE_MagEncoder_Relative)),
+    m_pShooterMotors                    (new TalonMotorGroup<TalonFX>(NUMBER_OF_SHOOTER_MOTORS, SHOOTER_MOTORS_CAN_START_ID, MotorGroupControlMode::INVERSE, FeedbackDevice::None)),
+    m_pWinchMotor                       (new TalonFX(WINCH_MOTOR_CAN_ID)),
+    m_pIntakeMotor                      (new TalonSRX(INTAKE_MOTOR_CAN_ID)),
+    m_pTurretMotor                      (new TalonSRX(TURRET_MOTOR_CAN_ID)),
+    m_pColorWheelMotor                  (new TalonSRX(COLOR_WHEEL_MOTOR_CAN_ID)),
     m_pLedsEnableRelay                  (new Relay(LEDS_ENABLE_RELAY_ID)),
     m_pRedLedRelay                      (new Relay(RED_LED_RELAY_ID)),
     m_pGreenLedRelay                    (new Relay(GREEN_LED_RELAY_ID)),
     m_pBlueLedRelay                     (new Relay(BLUE_LED_RELAY_ID)),
+    m_pTurretLeftHallSensor             (new DigitalInput(TURRET_LEFT_HALL_SENSOR_DIO_CHANNEL)),
+    m_pTurretCenterHallSensor           (new DigitalInput(TURRET_CENTER_HALL_SENSOR_DIO_CHANNEL)),
+    m_pTurretRightHallSensor            (new DigitalInput(TURRET_RIGHT_HALL_SENSOR_DIO_CHANNEL)),
     m_pDebugOutput                      (new DigitalOutput(DEBUG_OUTPUT_DIO_CHANNEL)),
+    m_pIntakeSolenoid                   (new DoubleSolenoid(INTAKE_SOLENOID_FORWARD_CHANNEL, INTAKE_SOLENOID_REVERSE_CHANNEL)),
+    m_pShooterSolenoid                  (new DoubleSolenoid(SHOOTER_SOLENOID_FORWARD_CHANNEL, SHOOTER_SOLENOID_REVERSE_CHANNEL)),
+    m_pHangerRaiseSolenoid              (new DoubleSolenoid(HANGER_RAISE_SOLENOID_FORWARD_CHANNEL, HANGER_RAISE_SOLENOID_REVERSE_CHANNEL)),
+    m_pHangerExtendSolenoid             (new DoubleSolenoid(HANGER_EXTEND_SOLENOID_FORWARD_CHANNEL, HANGER_EXTEND_SOLENOID_REVERSE_CHANNEL)),
+    m_pIntakeSolenoidTrigger            (nullptr),
+    m_pShooterSolenoidTrigger           (nullptr),
+    m_pHangerRaiseSolenoidTrigger       (nullptr),
+    m_pHangerExtendSolenoidTrigger      (nullptr),
     m_pAutonomousTimer                  (new Timer()),
     m_pInchingDriveTimer                (new Timer()),
     m_pDirectionalAlignTimer            (new Timer()),
@@ -181,10 +197,14 @@ YtaRobot::YtaRobot() :
     RobotUtils::DisplayFormattedMessage("The drive reverse axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_TRIGGER);
     RobotUtils::DisplayFormattedMessage("The drive left/right axis is: %d\n", YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE)->AXIS_MAPPINGS.LEFT_X_AXIS);
     
-    // @todo: Figure out how to assign these sooner to a valid joystick.
+    // @todo: Figure out how to assign these sooner to a valid joystick (pass by reference?).
     // Since the triggers use a joystick object, they can't be created until the joysticks are assigned
     m_pToggleFullProcessingTrigger  = new TriggerChangeValues(m_pDriveJoystick, CAMERA_TOGGLE_FULL_PROCESSING_BUTTON);
     m_pToggleProcessedImageTrigger  = new TriggerChangeValues(m_pDriveJoystick, CAMERA_TOGGLE_PROCESSED_IMAGE_BUTTON);
+    m_pIntakeSolenoidTrigger = new TriggerChangeValues(m_pControlJoystick, INTAKE_SOLENOID_CHANGE_STATE_BUTTON);
+    m_pShooterSolenoidTrigger = new TriggerChangeValues(m_pControlJoystick, SHOOTER_SOLENOID_CHANGE_STATE_BUTTON);
+    m_pHangerRaiseSolenoidTrigger = new TriggerChangeValues(m_pDriveJoystick, HANG_RAISE_SOLENOID_CHANGE_STATE_BUTTON);
+    m_pHangerExtendSolenoidTrigger = new TriggerChangeValues(m_pDriveJoystick, HANG_EXT_SOLENOID_CHANGE_STATE_BUTTON);
     
     // Construct the ADXRS450 gyro if configured
     if (ADXRS450_GYRO_PRESENT)
@@ -255,6 +275,11 @@ void YtaRobot::InitialStateSetup()
     // Start with motors off
     m_pLeftDriveMotors->Set(OFF);
     m_pRightDriveMotors->Set(OFF);
+    m_pShooterMotors->Set(OFF);
+    m_pWinchMotor->Set(ControlMode::PercentOutput, OFF);
+    m_pIntakeMotor->Set(ControlMode::PercentOutput, OFF);
+    m_pTurretMotor->Set(ControlMode::PercentOutput, OFF);
+    m_pColorWheelMotor->Set(ControlMode::PercentOutput, OFF);
     
     // Configure brake or coast for the drive motors
     m_pLeftDriveMotors->SetBrakeMode();
@@ -263,6 +288,12 @@ void YtaRobot::InitialStateSetup()
     // Tare encoders
     m_pLeftDriveMotors->TareEncoder();
     m_pRightDriveMotors->TareEncoder();
+
+    // Solenoids
+    m_pIntakeSolenoid->Set(DoubleSolenoid::kOff);
+    m_pShooterSolenoid->Set(DoubleSolenoid::kOff);
+    m_pHangerRaiseSolenoid->Set(DoubleSolenoid::kOff);
+    m_pHangerExtendSolenoid->Set(DoubleSolenoid::kOff);
     
     // Enable LEDs, but keep them off for now
     m_pLedsEnableRelay->Set(LEDS_ENABLED);
@@ -307,6 +338,7 @@ void YtaRobot::TeleopInit()
     
     // Tele-op won't do detailed processing of the images unless instructed to
     RobotCamera::SetFullProcessing(false);
+    RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
     
     // Indicate to the I2C thread to get data less often
     RobotI2c::SetThreadUpdateRate(I2C_RUN_INTERVAL_MS);
@@ -330,17 +362,152 @@ void YtaRobot::TeleopPeriodic()
 
     DriveControlSequence();
 
-    ColorSequence();
+    IntakeSequence();
+
+    TurretSequence();
+
+    ShooterSequence();
+
+    //ColorSequence();
 
     //LedSequence();
 
-    //PneumaticSequence();
+    PneumaticSequence();
+
+    HangSequence();
 
     //SerialPortSequence();
     
     //I2cSequence();
     
     //CameraSequence();
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::IntakeSequence
+///
+/// This method contains the main workflow for the intake.
+///
+////////////////////////////////////////////////////////////////
+void YtaRobot::IntakeSequence()
+{
+    double intakeMotorSpeed = OFF;
+
+    if (m_pControlJoystick->GetRawButton(INTAKE_FORWARD_BUTTON))
+    {
+        intakeMotorSpeed = INTAKE_MOTOR_SPEED;
+    }
+    else if (m_pControlJoystick->GetRawButton(INTAKE_REVERSE_BUTTON))
+    {
+        intakeMotorSpeed = -INTAKE_MOTOR_SPEED;
+    }
+    else
+    {
+        intakeMotorSpeed = OFF;
+    }
+
+    m_pIntakeMotor->Set(ControlMode::PercentOutput, intakeMotorSpeed);
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::TurretSequence
+///
+/// This method contains the main workflow for the turret.
+///
+////////////////////////////////////////////////////////////////
+void YtaRobot::TurretSequence()
+{
+    bool bLeftMovementAllowed = true;
+    bool bRightMovementAllowed = true;
+
+    // Hall sensors read true until the field is introduced (i.e. false = magnet present, true = magnet not present)
+
+    if (!m_pTurretLeftHallSensor->Get())
+    {
+        bRightMovementAllowed = false;
+    }
+
+    if (!m_pTurretRightHallSensor->Get())
+    {
+        bLeftMovementAllowed = false;
+    }
+
+    double turretControlValue = m_pControlJoystick->GetRawAxis(TURRET_CONTROL_AXIS);
+
+    if ((turretControlValue < 0.0) && bRightMovementAllowed)
+    {
+        m_pTurretMotor->Set(ControlMode::PercentOutput, turretControlValue * TURRET_MOTOR_SCALING_VALUE);
+    }
+    else if ((turretControlValue > 0.0) && bLeftMovementAllowed)
+    {
+        m_pTurretMotor->Set(ControlMode::PercentOutput, turretControlValue * TURRET_MOTOR_SCALING_VALUE);
+    }
+    else
+    {
+        m_pTurretMotor->Set(ControlMode::PercentOutput, OFF);
+    }
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::ShooterSequence
+///
+/// This method contains the main workflow for the shooter.
+///
+////////////////////////////////////////////////////////////////
+void YtaRobot::ShooterSequence()
+{
+    double shooterMotorSpeed = 0.0;
+    
+    if (m_pControlJoystick->GetRawButton(SHOOTER_FAST_BUTTON))
+    {
+        // Negative motor value spins in the desired direction
+        shooterMotorSpeed = -SHOOTER_FAST_MOTOR_SPEED;
+    }
+    else if (m_pControlJoystick->GetRawButton(SHOOTER_SLOW_BUTTON))
+    {
+        // Negative motor value spins in the desired direction
+        shooterMotorSpeed = -SHOOTER_SLOW_MOTOR_SPEED;
+    }
+    else
+    {
+        shooterMotorSpeed = OFF;
+    }
+
+    m_pShooterMotors->Set(shooterMotorSpeed);
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::HangSequence
+///
+/// This method contains the main workflow for hanging.
+///
+////////////////////////////////////////////////////////////////
+void YtaRobot::HangSequence()
+{
+    double winchMotorSpeed = OFF;
+
+    if (m_pDriveJoystick->GetRawButton(WINCH_FORWARD_BUTTON))
+    {
+        winchMotorSpeed = WINCH_MOTOR_SPEED;
+    }
+    else if (m_pDriveJoystick->GetRawButton(WINCH_REVERSE_BUTTON))
+    {
+        winchMotorSpeed = -WINCH_MOTOR_SPEED;
+    }
+    else
+    {
+        winchMotorSpeed = OFF;
+    }
+
+    m_pWinchMotor->Set(ControlMode::PercentOutput, winchMotorSpeed);
 }
 
 
@@ -452,6 +619,120 @@ void YtaRobot::LedSequence()
 ////////////////////////////////////////////////////////////////
 void YtaRobot::PneumaticSequence()
 {
+    static DoubleSolenoid::Value intakeSolenoidState = m_pIntakeSolenoid->Get();
+
+    if (m_pIntakeSolenoidTrigger->DetectChange())
+    {
+        switch (intakeSolenoidState)
+        {
+            case DoubleSolenoid::kForward:
+            {
+                
+                m_pIntakeSolenoid->Set(DoubleSolenoid::kReverse);
+                intakeSolenoidState = DoubleSolenoid::kReverse;
+                break;
+            }
+            // @todo: Remove kOff after InitialStateSetup() sets direction.
+            case DoubleSolenoid::kReverse:
+            case DoubleSolenoid::kOff:
+            {
+                m_pIntakeSolenoid->Set(DoubleSolenoid::kForward);
+                intakeSolenoidState = DoubleSolenoid::kForward;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+
+    static DoubleSolenoid::Value shooterSolenoidState = m_pShooterSolenoid->Get();
+
+    if (m_pShooterSolenoidTrigger->DetectChange())
+    {
+        switch (shooterSolenoidState)
+        {
+            case DoubleSolenoid::kForward:
+            {
+                
+                m_pShooterSolenoid->Set(DoubleSolenoid::kReverse);
+                shooterSolenoidState = DoubleSolenoid::kReverse;
+                break;
+            }
+            // @todo: Remove kOff after InitialStateSetup() sets direction.
+            case DoubleSolenoid::kReverse:
+            case DoubleSolenoid::kOff:
+            {
+                m_pShooterSolenoid->Set(DoubleSolenoid::kForward);
+                shooterSolenoidState = DoubleSolenoid::kForward;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    
+    static DoubleSolenoid::Value hangRaiseSolenoidState = m_pHangerRaiseSolenoid->Get();
+
+    if (m_pHangerRaiseSolenoidTrigger->DetectChange())
+    {
+        switch (hangRaiseSolenoidState)
+        {
+            case DoubleSolenoid::kForward:
+            {
+                
+                m_pHangerRaiseSolenoid->Set(DoubleSolenoid::kReverse);
+                hangRaiseSolenoidState = DoubleSolenoid::kReverse;
+                break;
+            }
+            // @todo: Remove kOff after InitialStateSetup() sets direction.
+            case DoubleSolenoid::kReverse:
+            case DoubleSolenoid::kOff:
+            {
+                m_pHangerRaiseSolenoid->Set(DoubleSolenoid::kForward);
+                hangRaiseSolenoidState = DoubleSolenoid::kForward;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
+
+    
+    static DoubleSolenoid::Value hangExtendSolenoidState = m_pHangerExtendSolenoid->Get();
+
+    if (m_pHangerExtendSolenoidTrigger->DetectChange())
+    {
+        switch (hangExtendSolenoidState)
+        {
+            case DoubleSolenoid::kForward:
+            {
+                
+                m_pHangerExtendSolenoid->Set(DoubleSolenoid::kReverse);
+                hangExtendSolenoidState = DoubleSolenoid::kReverse;
+                break;
+            }
+            // @todo: Remove kOff after InitialStateSetup() sets direction.
+            case DoubleSolenoid::kReverse:
+            case DoubleSolenoid::kOff:
+            {
+                m_pHangerExtendSolenoid->Set(DoubleSolenoid::kForward);
+                hangExtendSolenoidState = DoubleSolenoid::kForward;
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
+    }
 }
 
 
@@ -656,37 +937,51 @@ void YtaRobot::DriveControlSequence()
     }
     
     // Make sure axes inputs clear a certain threshold.  This will help to drive straight.
-    xAxisDrive = Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
-    yAxisDrive = Trim((yAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+    xAxisDrive = RobotUtils::Trim((xAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+    yAxisDrive = RobotUtils::Trim((yAxisDrive * throttleControl), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
 
     // If the swap direction button was pressed, negate y value
-    if ( m_bDriveSwap )
+    if (m_bDriveSwap)
     {
-        yAxisDrive *= -1;
+        yAxisDrive *= -1.0;
+    }
+
+    // By default, the drive equations cause the x-axis input
+    // to be flipped when going backward.  Correct that here,
+    // if configured.  Remember, y-axis full forward is negative.
+    if ((!USE_INVERTED_REVERSE_CONTROLS) && (yAxisDrive > 0.0))
+    {
+        xAxisDrive *= -1.0;
     }
     
     if (SLOW_DRIVE_ENABLED)
     {
         // Get the slow drive control joystick input
         double xAxisSlowDrive = m_pDriveJoystick->GetRawAxis(DRIVE_SLOW_X_AXIS);
-        xAxisSlowDrive = Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
+        xAxisSlowDrive = RobotUtils::Trim((xAxisSlowDrive * DRIVE_SLOW_THROTTLE_VALUE), JOYSTICK_TRIM_UPPER_LIMIT, JOYSTICK_TRIM_LOWER_LIMIT);
         
         // If the normal x-axis drive is non-zero, use it.  Otherwise use the slow drive input, which could also be zero.
         xAxisDrive = (xAxisDrive != 0.0) ? xAxisDrive : xAxisSlowDrive;
     }
     
     // Filter motor speeds
-    double leftSpeed = Limit((LeftDriveEquation(xAxisDrive, yAxisDrive)), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
-    double rightSpeed = Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double leftSpeed = RobotUtils::Limit((LeftDriveEquation(xAxisDrive, yAxisDrive)), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
+    double rightSpeed = RobotUtils::Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
     
     // Set motor speed
     m_pLeftDriveMotors->Set(leftSpeed);
     m_pRightDriveMotors->Set(rightSpeed);
 
+    // Retrieve motor temperatures
+    double leftTemp = ConvertCelsiusToFahrenheit(m_pLeftDriveMotors->GetMotorObject()->GetTemperature());
+    double rightTemp = ConvertCelsiusToFahrenheit(m_pRightDriveMotors->GetMotorObject()->GetTemperature());
+
     if (RobotUtils::DEBUG_PRINTS)
     {
         SmartDashboard::PutNumber("Left drive speed", leftSpeed);
         SmartDashboard::PutNumber("Right drive speed", rightSpeed);
+        SmartDashboard::PutNumber("Left temperature (F)", leftTemp);
+        SmartDashboard::PutNumber("Right temperature (F)", rightTemp);
     }
 }
 

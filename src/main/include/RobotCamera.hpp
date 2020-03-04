@@ -16,6 +16,7 @@
 
 // C INCLUDES
 #include "frc/smartdashboard/SmartDashboard.h"  // for smart dashboard support
+#include "frc/Timer.h"                          // for creating a Timer
 #include "cameraserver/CameraServer.h"          // for camera support
 
 // C++ INCLUDES
@@ -44,6 +45,37 @@ public:
         BACK_USB,
         MAX_NUM_USB_CAMERAS
     };
+
+    enum LimelightMode
+    {
+        // Values taken from the limelight documentation
+        VISION_PROCESSOR    = 0,
+        DRIVER_CAMERA       = 1
+    };
+    
+    // A structure for autonomous camera seeking operations
+    struct AutonomousCamera
+    {
+    public:
+        enum SeekDirection
+        {
+            SEEK_LEFT,
+            SEEK_RIGHT
+        };
+
+        static bool AlignToTarget(SeekDirection seekDirection, const bool bEnableMotors = true);
+
+    private:
+
+        static Timer m_AutoCameraTimer;
+        static double m_IntegralSum;
+
+        static constexpr double MAX_SEEK_MOTOR_SPEED = 0.25;
+        static constexpr double MAX_CAMERA_SEARCH_TIME_S = 5.0;
+        static constexpr double KI = 0.0001;
+        static constexpr double KP = 0.001; // 0.05 oscillates old robot
+        static constexpr double INTEGRAL_SUM_LIMIT_VALUE = 10000.0;
+    };
     
     // Set whether or not full vision processing can occur
     inline static void SetFullProcessing(bool bState);
@@ -53,6 +85,9 @@ public:
     
     // Toggle between cameras
     inline static void ToggleCamera();
+
+    // Set the limelight mode
+    inline static void SetLimelightMode(LimelightMode mode);
     
     // Toggle between what processed image is shown on the dashboard
     static void ToggleCameraProcessedImage();
@@ -176,7 +211,7 @@ private:
     };
     
     // Camera related variables
-    static std::shared_ptr<NetworkTable>        m_LimelightNetworkTable;            // Network table for the limelight camera
+    static std::shared_ptr<NetworkTable>        m_pLimelightNetworkTable;           // Network table for the limelight camera
     static UsbCameraStorage                     m_UsbCameras;                       // Memory for storing the USB camera objects
     static UsbCameraInfo *                      m_pCurrentUsbCamera;                // Pointer to the currently selected USB camera object   
     static cs::CvSource                         m_CameraOutput;                     // Output source for processed images
@@ -226,6 +261,19 @@ private:
     static constexpr double                     Kp                                  = 0.001;
     static double                                                integSum;
 };
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method RobotCamera::SetLimelightMode
+///
+/// This method sets the mode of the limelight camera.
+///
+////////////////////////////////////////////////////////////////
+inline void RobotCamera::SetLimelightMode(LimelightMode mode)
+{
+    m_pLimelightNetworkTable->PutNumber("camMode", static_cast<int>(mode));
+}
 
 
 
