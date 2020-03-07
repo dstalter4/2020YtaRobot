@@ -15,11 +15,13 @@
 #include "cameraserver/CameraServer.h"          // for CameraServer instance
 #include "networktables/NetworkTable.h"         // for network tables
 #include "networktables/NetworkTableInstance.h" // for network table instance
+#include "math.h"
 
 // C++ INCLUDES
 #include "RobotCamera.hpp"                      // for class declaration
 #include "RobotUtils.hpp"                       // for DisplayMessage(), DisplayFormattedMessage()
 #include "YtaRobot.hpp"                         // for GetRobotInstance()
+
 
 // STATIC MEMBER DATA
 std::shared_ptr<NetworkTable>                   RobotCamera::m_pLimelightNetworkTable;
@@ -51,6 +53,7 @@ double                                          RobotCamera::AutonomousCamera::m
 
 double RobotCamera::AutonomousCamera::speed = 0.2;
 int RobotCamera::AutonomousCamera::counter = 0;
+
 void RobotCamera::AutonomousCamera::BillyTest()
 {
     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
@@ -69,6 +72,12 @@ void RobotCamera::AutonomousCamera::BillyTest()
     SmartDashboard::PutNumber("Shooting Speed Counter", counter);
     //pRobotObj->m_pShooterMotors->Set(speed);
     pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, speed);
+}
+
+void RobotCamera::AutonomousCamera::BillyReset()
+{
+    m_IntegralSum = 0;
+    SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
 }
 
 void RobotCamera::AutonomousCamera::BillyTurretControl()
@@ -119,7 +128,10 @@ void RobotCamera::AutonomousCamera::BillyTurretPControl()
     }
 }
 
-void RobotCamera::AutonomousCamera::BillyBasePControl()
+
+
+
+bool RobotCamera::AutonomousCamera::BillyBasePControl()
 {
      YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
 
@@ -130,27 +142,75 @@ void RobotCamera::AutonomousCamera::BillyBasePControl()
     {        
         double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
         //double Kp = 0.1;
-        double Kp = 0.012;
-        double Ki = 0.0005;
+        double Kp = 0.01;
+        double Ki = 0.00015;
         
 
         double error = 0-targetX;
         double signal = Kp*error + Ki*m_IntegralSum;
-        signal = SignalLimiter(signal,0.4); //.2 limit
-        signal = SignalCutOff(signal,0.12);
+        signal = SignalLimiter(signal,0.5); //.2 limit
+        signal = SignalCutOff(signal, .05);
+        signal = SignalLowerLimiter(signal,0.1);
 
         
         SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
         SmartDashboard::PutNumber("Ki*sum",Ki*m_IntegralSum);
         SmartDashboard::PutNumber("Signal",signal);
+        SmartDashboard::PutNumber("error", error);
 
-        m_IntegralSum += 0.01*error;
+        m_IntegralSum += 0.02*error;
         m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
 
-        pRobotObj->m_pLeftDriveMotors->Set(signal);
-        pRobotObj->m_pRightDriveMotors->Set(signal);
+        if(abs(error) < 0.5)
+        {
+            m_IntegralSum = SignalLimiter(m_IntegralSum, 200);
+            return true;
+        }
+        else
+        {            
+            pRobotObj->m_pLeftDriveMotors->Set(-signal);
+            pRobotObj->m_pRightDriveMotors->Set(-signal);
+            return false;
+        }
+
+
+        
+        
         
     }
+    else
+        return false;
+}
+
+bool RobotCamera::AutonomousCamera::BillyTargetSearch(double search_speed)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if(!bTargetValid)
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(search_speed);
+        pRobotObj->m_pRightDriveMotors->Set(search_speed);
+        return false;
+    }
+    else
+    {      
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);  
+        return true;
+    }
+}
+
+double RobotCamera::AutonomousCamera::SignalLowerLimiter(double signal, double limit)
+{
+    if(signal < limit && signal > 0)
+        signal = limit;
+    else if(signal > -limit && signal < 0)
+        signal = -limit;
+
+    return signal;
 }
 
 double RobotCamera::AutonomousCamera::SignalLimiter(double signal, double limit)

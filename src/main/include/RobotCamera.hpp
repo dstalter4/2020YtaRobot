@@ -65,11 +65,15 @@ public:
 
         static bool AlignToTarget(SeekDirection seekDirection, const bool bEnableMotors = true);
         static void BillyTest();
+        static void BillyReset();
         static void BillyTurretControl();
         static void BillyTurretPControl();
-        static void BillyBasePControl();
+        static bool BillyBasePControl();
+        static bool BillyTargetSearch(double search_speed);
         static double SignalLimiter(double signal, double limit);
+        static double SignalLowerLimiter(double signal, double limit);
         static double SignalCutOff(double signal, double limit);
+        
 
     private:
 
@@ -263,7 +267,7 @@ private:
     static constexpr double                     CAMERA_FOV_DEGREES                  = 50.0;
     static constexpr double                     CAMERA_DIAGONAL_FOV_DEGREES         = 78.0;
     static constexpr double                     CALIBRATED_CAMERA_ANGLE             = 21.5778173;
-    static constexpr double                     DEGREES_TO_RADIANS                  = M_PI / 180.0;
+    static constexpr double                     DEGREES_TO_RADIANS                  = 3.14 / 180.0;
     static constexpr double                     DECIMAL_TO_PERCENT                  = 100.0;
 };
 

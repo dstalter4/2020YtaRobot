@@ -47,13 +47,27 @@ void YtaRobot::AutonomousRoutine1()
         bMotorSeek = true;
     }
 
+    RobotCamera::AutonomousCamera::BillyReset();
+
+    bool targetInView = false;
+    bool targetLock = false;
+
     while ( m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled() )
     {
         //RobotCamera::AutonomousCamera::AlignToTarget(RobotCamera::AutonomousCamera::SEEK_LEFT, bMotorSeek);
         //RobotCamera::AutonomousCamera::BillyTest();
         //RobotCamera::AutonomousCamera::BillyTurretControl();
         //RobotCamera::AutonomousCamera::BillyTurretPControl();
-        RobotCamera::AutonomousCamera::BillyBasePControl();
+        //RobotCamera::AutonomousCamera::BillyBasePControl();
+        
+        if(!targetInView)
+            targetInView = RobotCamera::AutonomousCamera::BillyTargetSearch(0.2);
+        else       
+            targetLock = RobotCamera::AutonomousCamera::BillyBasePControl();
+        
+        SmartDashboard::PutBoolean("Target In View", targetInView);
+        SmartDashboard::PutBoolean("Target Lock", targetLock);
+        
     }
     
     // Returning from here will enter the idle state until autonomous is over

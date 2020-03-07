@@ -128,3 +128,29 @@ double YtaController::GetThrottle() const
     // Not implemented yet, just return the default value
     return m_ThrottleValue;
 }
+
+
+bool YtaController::GetAutoPress()
+{
+    if(GetRawButtonPressed(CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON))
+        SmartDashboard::PutBoolean("Auto Press", true);
+    else
+        SmartDashboard::PutBoolean("Auto Press", false);
+    
+}
+
+bool YtaController::GetAutoDown()
+{
+    if(GetRawButton(CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON))
+        SmartDashboard::PutBoolean("Auto Down", true);
+    else
+        SmartDashboard::PutBoolean("Auto Down", false);
+}
+
+bool YtaController::GetAutoRelease()
+{
+        if(GetRawButtonReleased(CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON))
+        SmartDashboard::PutBoolean("Auto Release", true);
+    else
+        SmartDashboard::PutBoolean("Auto Release", false);
+}

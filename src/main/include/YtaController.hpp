@@ -111,6 +111,10 @@ public:
     virtual double GetY(JoystickHand hand = kLeftHand) const override;
     
     double GetThrottle() const;
+
+    virtual bool GetAutoPress();
+    virtual bool GetAutoDown();
+    virtual bool GetAutoRelease();
     
 private:
     

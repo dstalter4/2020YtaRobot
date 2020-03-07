@@ -967,11 +967,34 @@ void YtaRobot::DriveControlSequence()
     // Filter motor speeds
     double leftSpeed = RobotUtils::Limit((LeftDriveEquation(xAxisDrive, yAxisDrive)), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
     double rightSpeed = RobotUtils::Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
-    
-    // Set motor speed
-    m_pLeftDriveMotors->Set(leftSpeed);
-    m_pRightDriveMotors->Set(rightSpeed);
+  
+    // Autom Aim Sequence
+    if(m_pDriveJoystick->GetRawButton(AUTO_AIM_SEQUENCE_BUTTON))
+    {        
+        SmartDashboard::PutBoolean("Auto Aim System Override",true);
 
+        RobotCamera::SetFullProcessing(true);
+        RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
+
+        RobotCamera::AutonomousCamera::BillyBasePControl();
+    }
+    else
+    {
+        SmartDashboard::PutBoolean("Auto Aim System Override",false);
+
+        RobotCamera::SetFullProcessing(false);
+        RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
+
+        // Set motor speed
+        m_pLeftDriveMotors->Set(leftSpeed);
+        m_pRightDriveMotors->Set(rightSpeed);
+    }
+
+    if(m_pDriveJoystick->GetRawButtonReleased(AUTO_AIM_SEQUENCE_BUTTON))
+    {
+        RobotCamera::AutonomousCamera::BillyReset();
+    }
+        
     // Retrieve motor temperatures
     double leftTemp = ConvertCelsiusToFahrenheit(m_pLeftDriveMotors->GetMotorObject()->GetTemperature());
     double rightTemp = ConvertCelsiusToFahrenheit(m_pRightDriveMotors->GetMotorObject()->GetTemperature());

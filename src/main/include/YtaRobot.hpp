@@ -424,6 +424,8 @@ private:
     static const int                DRIVE_CONTROLS_INCH_BACKWARD_BUTTON     = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     static const int                DRIVE_CONTROLS_INCH_LEFT_BUTTON         = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     static const int                DRIVE_CONTROLS_INCH_RIGHT_BUTTON        = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
+    static const int                AUTO_AIM_SEQUENCE_BUTTON                = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON;
+
     
     // Control buttons
     static const int                TURRET_CONTROL_AXIS                     = CONTROL_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.LEFT_X_AXIS;
