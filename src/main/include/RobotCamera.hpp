@@ -64,11 +64,19 @@ public:
         };
 
         static bool AlignToTarget(SeekDirection seekDirection, const bool bEnableMotors = true);
+        static void BillyTest();
+        static void BillyTurretControl();
+        static void BillyTurretPControl();
+        static double SignalLimiter(double signal, double limit);
+        static double SignalCutOff(double signal, double limit);
 
     private:
 
         static Timer m_AutoCameraTimer;
         static double m_IntegralSum;
+
+        static double speed;
+        static int counter;
 
         static constexpr double MAX_SEEK_MOTOR_SPEED = 0.25;
         static constexpr double MAX_CAMERA_SEARCH_TIME_S = 5.0;

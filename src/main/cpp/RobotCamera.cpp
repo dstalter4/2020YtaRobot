@@ -49,6 +49,107 @@ const char *                                    RobotCamera::CAMERA_OUTPUT_NAME 
 Timer                                           RobotCamera::AutonomousCamera::m_AutoCameraTimer;
 double                                          RobotCamera::AutonomousCamera::m_IntegralSum = 0.0;
 
+double RobotCamera::AutonomousCamera::speed = 0.2;
+int RobotCamera::AutonomousCamera::counter = 0;
+void RobotCamera::AutonomousCamera::BillyTest()
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+
+        counter++;
+
+        if(counter > 20000)
+        {           
+            speed *= -1;        
+            counter = 0;    
+        }
+    
+
+    SmartDashboard::PutNumber("Shooting Speed", speed);
+    SmartDashboard::PutNumber("Shooting Speed Counter", counter);
+    //pRobotObj->m_pShooterMotors->Set(speed);
+    pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, speed);
+}
+
+void RobotCamera::AutonomousCamera::BillyTurretControl()
+{
+     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if(bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double turretSignal = 0.1;
+
+        if(targetX > 3)
+            turretSignal = turretSignal * -1;
+        else if(targetX < -3)
+            turretSignal = turretSignal * 1;
+
+        pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, turretSignal);
+        
+    }
+
+
+}
+
+void RobotCamera::AutonomousCamera::BillyTurretPControl()
+{
+     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if(bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        //double Kp = 0.1;
+        double Kp = 0.012;
+        double Ki = 0.0005;
+        
+
+        double error = 0-targetX;
+        double signal = Kp*error + Ki*m_IntegralSum;
+        signal = SignalLimiter(signal,0.4); //.2 limit
+        signal = SignalCutOff(signal,0.12);
+
+        
+        SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
+        SmartDashboard::PutNumber("Ki*sum",Ki*m_IntegralSum);
+        SmartDashboard::PutNumber("Signal",signal);
+
+        m_IntegralSum += 0.01*error;
+        m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+
+        //pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, signal);
+
+        pRobotObj->m_pLeftDriveMotors->Set(signal);
+        pRobotObj->m_pRightDriveMotors->Set(signal);
+        
+    }
+}
+
+double RobotCamera::AutonomousCamera::SignalLimiter(double signal, double limit)
+{
+    if(signal > limit)
+        signal = limit;
+    else if(signal < -limit)
+        signal = -limit;
+
+    return signal;
+}
+
+double RobotCamera::AutonomousCamera::SignalCutOff(double signal, double limit)
+{
+    if(signal < limit && signal > -limit)
+        signal = 0;
+
+    return signal;
+}
+
+
 
 ////////////////////////////////////////////////////////////////
 /// @method RobotCamera::AutonomousCamera::AlignToTarget
