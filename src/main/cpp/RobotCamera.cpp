@@ -105,6 +105,30 @@ void RobotCamera::AutonomousCamera::BillyTurretPControl()
     if(bTargetValid)
     {        
         double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double Kp = 0.1;
+
+        double error = 0-targetX;
+        double signal = Kp*error;
+        signal = SignalLimiter(signal,0.3); 
+
+        SmartDashboard::PutNumber("Signal",signal);
+
+
+        pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, signal);
+        
+    }
+}
+
+void RobotCamera::AutonomousCamera::BillyBasePControl()
+{
+     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if(bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
         //double Kp = 0.1;
         double Kp = 0.012;
         double Ki = 0.0005;
@@ -122,8 +146,6 @@ void RobotCamera::AutonomousCamera::BillyTurretPControl()
 
         m_IntegralSum += 0.01*error;
         m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
-
-        //pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, signal);
 
         pRobotObj->m_pLeftDriveMotors->Set(signal);
         pRobotObj->m_pRightDriveMotors->Set(signal);

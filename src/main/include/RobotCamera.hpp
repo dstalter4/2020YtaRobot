@@ -67,6 +67,7 @@ public:
         static void BillyTest();
         static void BillyTurretControl();
         static void BillyTurretPControl();
+        static void BillyBasePControl();
         static double SignalLimiter(double signal, double limit);
         static double SignalCutOff(double signal, double limit);
 

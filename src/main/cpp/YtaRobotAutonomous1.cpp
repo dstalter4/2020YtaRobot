@@ -52,7 +52,8 @@ void YtaRobot::AutonomousRoutine1()
         //RobotCamera::AutonomousCamera::AlignToTarget(RobotCamera::AutonomousCamera::SEEK_LEFT, bMotorSeek);
         //RobotCamera::AutonomousCamera::BillyTest();
         //RobotCamera::AutonomousCamera::BillyTurretControl();
-        RobotCamera::AutonomousCamera::BillyTurretPControl();
+        //RobotCamera::AutonomousCamera::BillyTurretPControl();
+        RobotCamera::AutonomousCamera::BillyBasePControl();
     }
     
     // Returning from here will enter the idle state until autonomous is over
