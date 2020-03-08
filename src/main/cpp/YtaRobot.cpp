@@ -438,6 +438,8 @@ void YtaRobot::TurretSequence()
 
     double turretControlValue = m_pControlJoystick->GetRawAxis(TURRET_CONTROL_AXIS);
 
+    // DISABLE TURRET FOR ROCHESTER CONFIG
+    /*
     if ((turretControlValue < 0.0) && bRightMovementAllowed)
     {
         m_pTurretMotor->Set(ControlMode::PercentOutput, turretControlValue * TURRET_MOTOR_SCALING_VALUE);
@@ -449,7 +451,7 @@ void YtaRobot::TurretSequence()
     else
     {
         m_pTurretMotor->Set(ControlMode::PercentOutput, OFF);
-    }
+    }*/
 }
 
 
@@ -969,14 +971,32 @@ void YtaRobot::DriveControlSequence()
     double rightSpeed = RobotUtils::Limit(RightDriveEquation(xAxisDrive, yAxisDrive), DRIVE_MOTOR_UPPER_LIMIT, DRIVE_MOTOR_LOWER_LIMIT);
   
     // Autom Aim Sequence
-    if(m_pDriveJoystick->GetRawButton(AUTO_AIM_SEQUENCE_BUTTON))
+    if(m_pDriveJoystick->GetRawButton(AUTO_SEARCH_SEQUENCE_BUTTON))
+    {
+        RobotCamera::SetFullProcessing(true);
+        RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
+
+        if(!RobotCamera::AutonomousCamera::targetInView)
+        {
+            RobotCamera::AutonomousCamera::BillyTargetSearch(0.35);
+        }
+        else
+        {
+            RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,3.8);
+        }
+    }
+    else if(m_pDriveJoystick->GetRawButton(AUTO_AIM_SEQUENCE_BUTTON))
     {        
         SmartDashboard::PutBoolean("Auto Aim System Override",true);
 
         RobotCamera::SetFullProcessing(true);
         RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
 
-        RobotCamera::AutonomousCamera::BillyBasePControl();
+        //Practice Bot
+        // Base Line Values: 0.01 / 0.00015 / 2
+        // Aggressive: .02 / .00015 / 1.2
+        // Moderate: .015 / .000115 / 3.8
+        RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,3.8); // Code Run Slower at TeleOperated Mode, sum rate higher!
     }
     else
     {
@@ -990,7 +1010,7 @@ void YtaRobot::DriveControlSequence()
         m_pRightDriveMotors->Set(rightSpeed);
     }
 
-    if(m_pDriveJoystick->GetRawButtonReleased(AUTO_AIM_SEQUENCE_BUTTON))
+    if(m_pDriveJoystick->GetRawButtonPressed(AUTO_AIM_SEQUENCE_BUTTON) || m_pDriveJoystick->GetRawButtonPressed(AUTO_SEARCH_SEQUENCE_BUTTON))
     {
         RobotCamera::AutonomousCamera::BillyReset();
     }

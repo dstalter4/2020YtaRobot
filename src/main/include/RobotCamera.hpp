@@ -68,12 +68,15 @@ public:
         static void BillyReset();
         static void BillyTurretControl();
         static void BillyTurretPControl();
-        static bool BillyBasePControl();
+        static bool BillyBasePControl(double Kp, double Ki, double sumRate);
         static bool BillyTargetSearch(double search_speed);
         static double SignalLimiter(double signal, double limit);
         static double SignalLowerLimiter(double signal, double limit);
         static double SignalCutOff(double signal, double limit);
         
+        
+        static bool targetInView;
+        static bool targetLock;
 
     private:
 
@@ -82,6 +85,7 @@ public:
 
         static double speed;
         static int counter;
+
 
         static constexpr double MAX_SEEK_MOTOR_SPEED = 0.25;
         static constexpr double MAX_CAMERA_SEARCH_TIME_S = 5.0;

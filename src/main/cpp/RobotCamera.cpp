@@ -54,6 +54,9 @@ double                                          RobotCamera::AutonomousCamera::m
 double RobotCamera::AutonomousCamera::speed = 0.2;
 int RobotCamera::AutonomousCamera::counter = 0;
 
+        bool RobotCamera::AutonomousCamera::targetInView = false;
+        bool RobotCamera::AutonomousCamera::targetLock = false;
+
 void RobotCamera::AutonomousCamera::BillyTest()
 {
     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
@@ -77,6 +80,8 @@ void RobotCamera::AutonomousCamera::BillyTest()
 void RobotCamera::AutonomousCamera::BillyReset()
 {
     m_IntegralSum = 0;
+    targetInView = false;
+    targetLock = false;
     SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
 }
 
@@ -131,7 +136,7 @@ void RobotCamera::AutonomousCamera::BillyTurretPControl()
 
 
 
-bool RobotCamera::AutonomousCamera::BillyBasePControl()
+bool RobotCamera::AutonomousCamera::BillyBasePControl(double Kp, double Ki, double sumRate)
 {
      YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
 
@@ -141,14 +146,11 @@ bool RobotCamera::AutonomousCamera::BillyBasePControl()
     if(bTargetValid)
     {        
         double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
-        //double Kp = 0.1;
-        double Kp = 0.01;
-        double Ki = 0.00015;
-        
 
         double error = 0-targetX;
         double signal = Kp*error + Ki*m_IntegralSum;
-        signal = SignalLimiter(signal,0.5); //.2 limit
+
+        signal = SignalLimiter(signal,0.5); 
         signal = SignalCutOff(signal, .05);
         signal = SignalLowerLimiter(signal,0.1);
 
@@ -158,28 +160,32 @@ bool RobotCamera::AutonomousCamera::BillyBasePControl()
         SmartDashboard::PutNumber("Signal",signal);
         SmartDashboard::PutNumber("error", error);
 
-        m_IntegralSum += 0.02*error;
+        m_IntegralSum += sumRate*error;
         m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
 
-        if(abs(error) < 0.5)
+        if(abs(error) < 0.3)
         {
             m_IntegralSum = SignalLimiter(m_IntegralSum, 200);
+            targetLock = true;
             return true;
         }
         else
         {            
             pRobotObj->m_pLeftDriveMotors->Set(-signal);
             pRobotObj->m_pRightDriveMotors->Set(-signal);
+            targetLock = false;
             return false;
         }
 
-
-        
-        
         
     }
     else
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);
+        targetLock = false;
         return false;
+    }
 }
 
 bool RobotCamera::AutonomousCamera::BillyTargetSearch(double search_speed)
@@ -188,6 +194,8 @@ bool RobotCamera::AutonomousCamera::BillyTargetSearch(double search_speed)
 
     // 1 = target in view, 0 = target not in view
     bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    targetInView = bTargetValid;
 
     if(!bTargetValid)
     {

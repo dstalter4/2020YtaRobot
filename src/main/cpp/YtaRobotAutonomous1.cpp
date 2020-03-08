@@ -49,26 +49,89 @@ void YtaRobot::AutonomousRoutine1()
 
     RobotCamera::AutonomousCamera::BillyReset();
 
+
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+
+    
+    RobotCamera::SetFullProcessing(true);
+    RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
+
+    while ( !m_pDriverStation->IsAutonomous() || !m_pDriverStation->IsEnabled() )
+    {};
+
+    // Back Up Sequence
+    for(int i = 0; i < 50000; i++)
+    {
+        if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+        {                    
+            pRobotObj->m_pLeftDriveMotors->Set(-0.2);
+            pRobotObj->m_pRightDriveMotors->Set(0.2);
+        }
+        else
+        {
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+            return;
+        }
+
+        SmartDashboard::PutNumber("Auto 1 Backward Count",i);
+    }
+    
+    pRobotObj->m_pLeftDriveMotors->Set(0);
+    pRobotObj->m_pRightDriveMotors->Set(0);
+
+    
     bool targetInView = false;
     bool targetLock = false;
 
+    // Target Searching and Aiming Sequnce
+    while (!targetInView)
+    {
+        if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+            return;
+    }
+
+    /*
+    // Target Search and Lock On Sequence
     while ( m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled() )
     {
-        //RobotCamera::AutonomousCamera::AlignToTarget(RobotCamera::AutonomousCamera::SEEK_LEFT, bMotorSeek);
-        //RobotCamera::AutonomousCamera::BillyTest();
-        //RobotCamera::AutonomousCamera::BillyTurretControl();
-        //RobotCamera::AutonomousCamera::BillyTurretPControl();
-        //RobotCamera::AutonomousCamera::BillyBasePControl();
+        
+        // Move Backward for 10000 count
+        if(ranOnce == false)
+        {
+            for(int i = 0; i < 1000000; i++)
+            {
+                if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+                {                    
+                    pRobotObj->m_pLeftDriveMotors->Set(-0.2);
+                    pRobotObj->m_pRightDriveMotors->Set(0.2);
+                }
+                else
+                {
+                    pRobotObj->m_pLeftDriveMotors->Set(0);
+                    pRobotObj->m_pLeftDriveMotors->Set(0);
+                }
+            }
+            ranOnce = true;
+        }
         
         if(!targetInView)
-            targetInView = RobotCamera::AutonomousCamera::BillyTargetSearch(0.2);
+            targetInView = RobotCamera::AutonomousCamera::BillyTargetSearch(0.1);
         else       
-            targetLock = RobotCamera::AutonomousCamera::BillyBasePControl();
+            targetLock = RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,.01);
         
         SmartDashboard::PutBoolean("Target In View", targetInView);
         SmartDashboard::PutBoolean("Target Lock", targetLock);
         
-    }
+        if(targetLock)
+        {
+            if(m_pDriverStation->IsEnabled() && m_pDriverStation->IsAutonomous())
+                pRobotObj->m_pShooterMotors->Set(1);
+            else
+                pRobotObj->m_pShooterMotors->Set(0);
+        }
+    }*/
     
     // Returning from here will enter the idle state until autonomous is over
     RobotUtils::DisplayMessage("Auto routine 1 done.");
