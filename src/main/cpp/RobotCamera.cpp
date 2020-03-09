@@ -56,6 +56,7 @@ int RobotCamera::AutonomousCamera::counter = 0;
 
         bool RobotCamera::AutonomousCamera::targetInView = false;
         bool RobotCamera::AutonomousCamera::targetLock = false;
+        int RobotCamera::AutonomousCamera::targetLockCounter = 0;
 
 void RobotCamera::AutonomousCamera::BillyTest()
 {
@@ -82,6 +83,7 @@ void RobotCamera::AutonomousCamera::BillyReset()
     m_IntegralSum = 0;
     targetInView = false;
     targetLock = false;
+    targetLockCounter = 0;
     SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
 }
 
@@ -159,20 +161,40 @@ bool RobotCamera::AutonomousCamera::BillyBasePControl(double Kp, double Ki, doub
         SmartDashboard::PutNumber("Ki*sum",Ki*m_IntegralSum);
         SmartDashboard::PutNumber("Signal",signal);
         SmartDashboard::PutNumber("error", error);
+        SmartDashboard::PutNumber("Target Lock Counter", targetLockCounter);
 
         m_IntegralSum += sumRate*error;
         m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
 
         if(abs(error) < 0.3)
         {
-            m_IntegralSum = SignalLimiter(m_IntegralSum, 200);
-            targetLock = true;
-            return true;
+            //m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+
+            targetLockCounter++;
+            
+
+            // Determine Lock if Stable for 500 Counts
+            if(targetLockCounter > 500)
+            {
+                targetLock = true;
+                return true;
+            }
+            else
+            {
+                targetLock = false;
+                return false;
+            }
+            
+            
+            
         }
         else
-        {            
-            pRobotObj->m_pLeftDriveMotors->Set(signal);
-            pRobotObj->m_pRightDriveMotors->Set(signal); //practice bot flip
+        { 
+            targetLockCounter = 0;           
+            pRobotObj->m_pLeftDriveMotors->Set(-signal);
+            pRobotObj->m_pRightDriveMotors->Set(-signal); //practice bot flip
             targetLock = false;
             return false;
         }

@@ -77,6 +77,7 @@ public:
         
         static bool targetInView;
         static bool targetLock;
+        static int targetLockCounter;
 
     private:
 

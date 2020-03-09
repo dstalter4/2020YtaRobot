@@ -982,7 +982,8 @@ void YtaRobot::DriveControlSequence()
         }
         else
         {
-            RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,3.8);
+            // .015 / .000115 / 3.8
+            RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,4.0);
         }
     }
     else if(m_pDriveJoystick->GetRawButton(AUTO_AIM_SEQUENCE_BUTTON))
@@ -996,7 +997,8 @@ void YtaRobot::DriveControlSequence()
         // Base Line Values: 0.01 / 0.00015 / 2
         // Aggressive: .02 / .00015 / 1.2
         // Moderate: .015 / .000115 / 3.8
-        RobotCamera::AutonomousCamera::BillyBasePControl(.015,.000115,3.8); // Code Run Slower at TeleOperated Mode, sum rate higher!
+        // Okay - .015 / .00015 / 4.0
+        RobotCamera::AutonomousCamera::BillyBasePControl(.015,.00015,4.0); // Code Run Slower at TeleOperated Mode, sum rate higher!
     }
     else
     {
@@ -1006,8 +1008,8 @@ void YtaRobot::DriveControlSequence()
         RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
 
         // Set motor speed
-        m_pLeftDriveMotors->Set(leftSpeed);
-        m_pRightDriveMotors->Set(rightSpeed);
+        m_pLeftDriveMotors->Set(-leftSpeed); // practice bot opposite sign
+        m_pRightDriveMotors->Set(-rightSpeed);
     }
 
     if(m_pDriveJoystick->GetRawButtonPressed(AUTO_AIM_SEQUENCE_BUTTON) || m_pDriveJoystick->GetRawButtonPressed(AUTO_SEARCH_SEQUENCE_BUTTON))

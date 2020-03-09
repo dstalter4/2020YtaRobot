@@ -89,8 +89,60 @@ void YtaRobot::AutonomousRoutine1()
     while (!targetInView)
     {
         if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+            {
+                targetInView = RobotCamera::AutonomousCamera::BillyTargetSearch(0.2);
+                SmartDashboard::PutBoolean("Target In View", targetInView);
+            }
+            else
+        {
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
             return;
+        }
+            
     }
+
+    // Target Searching and Aiming Sequnce
+    while (!targetLock)
+    {
+        if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+            { //.00015 / 4.0
+            
+                targetLock = RobotCamera::AutonomousCamera::BillyBasePControl(.01,0.0001,.01);
+                SmartDashboard::PutBoolean("Target Lock", targetLock);
+            }
+            else
+        {
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+            return;
+        }
+    }
+
+    // Enable Firing Motor
+    pRobotObj->m_pShooterMotors->Set(-1.0);
+
+    for(int i = 0; i < 100000; i++)
+    {
+        if(m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
+        {
+            
+        pRobotObj->m_pShooterMotors->Set(-1.0);
+        pRobotObj->m_pIntakeMotor->Set(ControlMode::PercentOutput, 1);
+        }
+        else
+        {
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+            return;
+        }
+    }
+
+    // Autonomous Sequence Completed
+    pRobotObj->m_pShooterMotors->Set(0);
+    pRobotObj->m_pLeftDriveMotors->Set(0);
+    pRobotObj->m_pRightDriveMotors->Set(0);
+    pRobotObj->m_pIntakeMotor->Set(ControlMode::PercentOutput, 0);
 
     /*
     // Target Search and Lock On Sequence
