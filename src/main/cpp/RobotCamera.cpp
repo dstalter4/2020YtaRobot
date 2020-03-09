@@ -171,8 +171,8 @@ bool RobotCamera::AutonomousCamera::BillyBasePControl(double Kp, double Ki, doub
         }
         else
         {            
-            pRobotObj->m_pLeftDriveMotors->Set(-signal);
-            pRobotObj->m_pRightDriveMotors->Set(-signal);
+            pRobotObj->m_pLeftDriveMotors->Set(signal);
+            pRobotObj->m_pRightDriveMotors->Set(signal); //practice bot flip
             targetLock = false;
             return false;
         }
