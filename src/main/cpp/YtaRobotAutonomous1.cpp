@@ -12,7 +12,7 @@
 // <none>
 
 // C INCLUDES
-// (none)
+#include "frc/Timer.h"
 
 // C++ INCLUDES
 #include "RobotCamera.hpp"              // for AlignToTarget()
@@ -60,6 +60,14 @@ void YtaRobot::AutonomousRoutine1()
     while ( !m_pDriverStation->IsAutonomous() || !m_pDriverStation->IsEnabled() )
     {};
 
+    frc::Timer* timer;
+    
+    timer = new frc::Timer;
+    timer->Start();
+
+
+
+
     // Back Up Sequence
     for(int i = 0; i < 50000; i++)
     {
@@ -76,6 +84,7 @@ void YtaRobot::AutonomousRoutine1()
         }
 
         SmartDashboard::PutNumber("Auto 1 Backward Count",i);
+        SmartDashboard::PutNumber("Time", timer->Get());
     }
     
     pRobotObj->m_pLeftDriveMotors->Set(0);

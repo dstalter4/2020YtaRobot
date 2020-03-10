@@ -58,6 +58,8 @@ int RobotCamera::AutonomousCamera::counter = 0;
         bool RobotCamera::AutonomousCamera::targetLock = false;
         int RobotCamera::AutonomousCamera::targetLockCounter = 0;
 
+
+
 void RobotCamera::AutonomousCamera::BillyTest()
 {
     YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
@@ -85,6 +87,7 @@ void RobotCamera::AutonomousCamera::BillyReset()
     targetLock = false;
     targetLockCounter = 0;
     SmartDashboard::PutNumber("Integral Sum: ",m_IntegralSum);
+    
 }
 
 void RobotCamera::AutonomousCamera::BillyTurretControl()
