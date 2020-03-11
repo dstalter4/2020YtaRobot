@@ -57,18 +57,38 @@ public:
     struct AutonomousCamera
     {
     public:
+
         enum SeekDirection
         {
             SEEK_LEFT,
             SEEK_RIGHT
         };
 
+        inline static bool IsTargetInView() { return m_TargetInView; }
         static bool AlignToTarget(SeekDirection seekDirection, const bool bEnableMotors = true);
+
+        static void Reset();
+        static bool BasePControl(double Kp, double Ki, double sumRate);
+        static bool TargetSearch(double searchSpeed);
+        
+        // Test functions for development purposes
+        static void Test();
+        static void TestTurretControl();
+        static void TestTurretPControl();
 
     private:
 
+        static double SignalLimiter(double signal, double limit);
+        static double SignalLowerLimiter(double signal, double limit);
+        static double SignalCutOff(double signal, double limit);
+
         static Timer m_AutoCameraTimer;
         static double m_IntegralSum;
+        static double m_Speed;
+        static int m_Counter;
+        static int m_TargetLockCounter;
+        static bool m_TargetInView;
+        static bool m_TargetLock;
 
         static constexpr double MAX_SEEK_MOTOR_SPEED = 0.25;
         static constexpr double MAX_CAMERA_SEARCH_TIME_S = 5.0;

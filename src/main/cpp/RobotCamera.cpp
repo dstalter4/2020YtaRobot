@@ -15,6 +15,7 @@
 #include "cameraserver/CameraServer.h"          // for CameraServer instance
 #include "networktables/NetworkTable.h"         // for network tables
 #include "networktables/NetworkTableInstance.h" // for network table instance
+#include "math.h"                               // for std::abs
 
 // C++ INCLUDES
 #include "RobotCamera.hpp"                      // for class declaration
@@ -48,6 +49,158 @@ const char *                                    RobotCamera::CAMERA_OUTPUT_NAME 
 
 Timer                                           RobotCamera::AutonomousCamera::m_AutoCameraTimer;
 double                                          RobotCamera::AutonomousCamera::m_IntegralSum = 0.0;
+int                                             RobotCamera::AutonomousCamera::m_TargetLockCounter = 0;
+bool                                            RobotCamera::AutonomousCamera::m_TargetInView = false;
+bool                                            RobotCamera::AutonomousCamera::m_TargetLock = false;
+
+
+void RobotCamera::AutonomousCamera::Reset()
+{
+    m_IntegralSum = 0;
+    m_TargetInView = false;
+    m_TargetLock = false;
+    m_TargetLockCounter = 0;
+    SmartDashboard::PutNumber("Integral Sum: ", m_IntegralSum);
+    
+}
+
+bool RobotCamera::AutonomousCamera::BasePControl(double Kp, double Ki, double sumRate)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if (bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double error = 0 - targetX;
+        double signal = (Kp * error) + (Ki * m_IntegralSum);
+
+        signal = SignalLimiter(signal, 0.5); 
+        signal = SignalCutOff(signal, .05);
+        signal = SignalLowerLimiter(signal, 0.1);
+        
+        SmartDashboard::PutNumber("Integral sum: ", m_IntegralSum);
+        SmartDashboard::PutNumber("Ki*sum", Ki * m_IntegralSum);
+        SmartDashboard::PutNumber("Signal", signal);
+        SmartDashboard::PutNumber("error", error);
+        SmartDashboard::PutNumber("Target Lock Counter", m_TargetLockCounter);
+
+        m_IntegralSum += sumRate * error;
+        m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+
+        if (std::abs(error) < 0.3)
+        {
+            //m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+
+            m_TargetLockCounter++;
+
+            // Determine Lock if Stable for 500 Counts
+            if (m_TargetLockCounter > 500)
+            {
+                m_TargetLock = true;
+                return true;
+            }
+            else
+            {
+                m_TargetLock = false;
+                return false;
+            }
+        }
+        else
+        { 
+            m_TargetLockCounter = 0;           
+            pRobotObj->m_pLeftDriveMotors->Set(-signal);
+            pRobotObj->m_pRightDriveMotors->Set(-signal); //practice bot flip
+            m_TargetLock = false;
+            return false;
+        }
+    }
+    else
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);
+        m_TargetLock = false;
+        return false;
+    }
+}
+
+bool RobotCamera::AutonomousCamera::TargetSearch(double searchSpeed)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    m_TargetInView = bTargetValid;
+
+    if (!bTargetValid)
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(searchSpeed);
+        pRobotObj->m_pRightDriveMotors->Set(searchSpeed);
+        return false;
+    }
+    else
+    {      
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);  
+        return true;
+    }
+}
+
+double RobotCamera::AutonomousCamera::SignalLowerLimiter(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+
+    if ((signal < limit) && (signal > 0))
+    {
+        signal = limit;
+    }
+    else if ((signal > -limit) && (signal < 0))
+    {
+        signal = -limit;
+    }
+    else
+    {
+    }
+    
+    return signal;
+}
+
+double RobotCamera::AutonomousCamera::SignalLimiter(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+    
+    if (signal > limit)
+    {
+        signal = limit;
+    }
+    else if (signal < -limit)
+    {
+        signal = -limit;
+    }
+    else
+    {
+    }
+
+    return signal;
+}
+
+double RobotCamera::AutonomousCamera::SignalCutOff(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+    
+    if ((signal < limit) && (signal > -limit))
+    {
+        signal = 0;
+    }
+
+    return signal;
+}
+
 
 
 ////////////////////////////////////////////////////////////////
