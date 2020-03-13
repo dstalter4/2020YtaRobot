@@ -1048,6 +1048,7 @@ bool YtaRobot::SearchAndAim()
             SmartDashboard::GetNumber("ki", ki);
             SmartDashboard::GetNumber("accum", accum);
             RobotCamera::AutonomousCamera::BasePControl(kp, ki, accum);
+            //Keith is weird
             //RobotCamera::AutonomousCamera::BasePControl(.005, 0.000, 0.0);
         }
 
