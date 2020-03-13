@@ -54,10 +54,14 @@ void YtaRobot::AutonomousRoutine1()
     RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
 
     // Back Up Sequence
-    AutonomousDriveSequence(ROBOT_REVERSE, 0.25, 1.0);
+    // AutonomousDriveSequence(ROBOT_FORWARD, 0.25, 1.0);
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.50, 1.25);
     
     m_pLeftDriveMotors->Set(0);
     m_pRightDriveMotors->Set(0);
+
+    // Start spinning up shooter
+    m_pShooterMotors->Set(-0.75);
     
     bool targetInView = false;
     bool targetLock = false;
@@ -85,7 +89,9 @@ void YtaRobot::AutonomousRoutine1()
         if (m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
         {
             //.00015 / 4.0
-            targetLock = RobotCamera::AutonomousCamera::BasePControl(.01, 0.0001, .01);
+            // targetLock = RobotCamera::AutonomousCamera::BasePControl(.01, 0.0001, .01);
+            //20200313 final values: Kp==0.01, Ki==0.0001, accuum==8.00
+            targetLock = RobotCamera::AutonomousCamera::BasePControl(.01, 0.0002, .01);
             SmartDashboard::PutBoolean("Target Lock", targetLock);
         }
         else
@@ -96,8 +102,8 @@ void YtaRobot::AutonomousRoutine1()
         }
     }
 
-    // Enable Firing Motor
-    m_pShooterMotors->Set(-1.0);
+    // Move the intake
+    m_pIntakeMotor->Set(ControlMode::PercentOutput, 1.0);
 
     // Time the shots
     m_pAutonomousTimer->Start();

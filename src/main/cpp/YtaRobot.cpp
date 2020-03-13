@@ -1026,6 +1026,10 @@ bool YtaRobot::SearchAndAim()
         RobotCamera::AutonomousCamera::Reset();
     }
 
+    static double kp = 0.0;
+    static double ki = 0.0;
+    static double accum = 0.0;
+
     // Auto Aim Sequence
     if (m_pDriveJoystick->GetRawButton(AUTO_SEARCH_SEQUENCE_BUTTON))
     {
@@ -1034,19 +1038,17 @@ bool YtaRobot::SearchAndAim()
 
         if (!RobotCamera::AutonomousCamera::IsTargetInView())
         {
-            RobotCamera::AutonomousCamera::TargetSearch(0.35);
+            bool bTargetSearchDone = RobotCamera::AutonomousCamera::TargetSearch(0.35);
+            SmartDashboard::PutBoolean("Target search done", bTargetSearchDone);
         }
         else
         {
             // .015 / .000115 / 3.8
             // RobotCamera::AutonomousCamera::BasePControl(.010, .000115, 4.0);
 
-            static double kp = 0.0;
-            static double ki = 0.0;
-            static double accum = 0.0;
-            SmartDashboard::GetNumber("kp", kp);
-            SmartDashboard::GetNumber("ki", ki);
-            SmartDashboard::GetNumber("accum", accum);
+            kp = SmartDashboard::GetNumber("kp", kp);
+            ki = SmartDashboard::GetNumber("ki", ki);
+            accum = SmartDashboard::GetNumber("accum", accum);
             RobotCamera::AutonomousCamera::BasePControl(kp, ki, accum);
             //Keith is weird
             //RobotCamera::AutonomousCamera::BasePControl(.005, 0.000, 0.0);
@@ -1066,8 +1068,12 @@ bool YtaRobot::SearchAndAim()
         // Aggressive: .02 / .00015 / 1.2
         // Moderate: .015 / .000115 / 3.8
         // Okay - .015 / .00015 / 4.0
-        RobotCamera::AutonomousCamera::BasePControl(.015, .00015, 4.0); // Code Run Slower at TeleOperated Mode, sum rate higher!
+        //RobotCamera::AutonomousCamera::BasePControl(.015, .00015, 4.0); // Code Run Slower at TeleOperated Mode, sum rate higher!
 
+            kp = SmartDashboard::GetNumber("kp", kp);
+            ki = SmartDashboard::GetNumber("ki", ki);
+            accum = SmartDashboard::GetNumber("accum", accum);
+            RobotCamera::AutonomousCamera::BasePControl(kp, ki, accum);
         bSearchOrAimHappened = true;
     }
     else
