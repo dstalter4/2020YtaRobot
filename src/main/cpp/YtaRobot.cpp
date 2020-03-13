@@ -81,7 +81,7 @@ YtaRobot::YtaRobot() :
     m_SerialPortBuffer                  (),
     m_pSerialPort                       (new SerialPort(SERIAL_PORT_BAUD_RATE, SerialPort::kMXP, SERIAL_PORT_NUM_DATA_BITS, SerialPort::kParity_None, SerialPort::kStopBits_One)),
     m_I2cThread                         (RobotI2c::I2cThread),
-    m_pColorSensor                      (new rev::ColorSensorV3(I2C::Port::kOnboard)),
+    m_pColorSensor                      (nullptr),//new rev::ColorSensorV3(I2C::Port::kOnboard)),
     m_pColorMatcher                     (new rev::ColorMatch()),
     m_RobotMode                         (ROBOT_MODE_NOT_SET),
     m_RobotDriveState                   (MANUAL_CONTROL),
@@ -368,6 +368,8 @@ void YtaRobot::TeleopPeriodic()
 
     ShooterSequence();
 
+    // If this turned on, change m_pColorSensor in the
+    // member initialization list to not use nullptr.
     //ColorSequence();
 
     //LedSequence();
@@ -881,6 +883,15 @@ void YtaRobot::DriveControlSequence()
         }
     }
 
+    if (SEARCH_AND_AIM_ENABLED)
+    {
+        // If a search and aim happened, just return
+        if (SearchAndAim())
+        {
+            return;
+        }
+    }
+
     //CheckForDriveSwap();
     
     // Computes what the maximum drive speed could be.
@@ -983,6 +994,73 @@ void YtaRobot::DriveControlSequence()
         SmartDashboard::PutNumber("Left temperature (F)", leftTemp);
         SmartDashboard::PutNumber("Right temperature (F)", rightTemp);
     }
+}
+
+
+
+////////////////////////////////////////////////////////////////
+/// @method YtaRobot::SearchAndAim
+///
+/// This method contains the main workflow for drive control
+/// for automatically searching for and aiming at a target.  It
+/// is intended to be an aid to the driver over manual
+/// positioning.
+///
+////////////////////////////////////////////////////////////////
+bool YtaRobot::SearchAndAim()
+{
+    // @todo: Add a safety timer to these operations so they don't operate indefinitely!
+
+    bool bSearchOrAimHappened = false;
+
+    if (m_pDriveJoystick->GetRawButtonPressed(AUTO_AIM_SEQUENCE_BUTTON) || m_pDriveJoystick->GetRawButtonPressed(AUTO_SEARCH_SEQUENCE_BUTTON))
+    {
+        RobotCamera::AutonomousCamera::Reset();
+    }
+
+    // Auto Aim Sequence
+    if (m_pDriveJoystick->GetRawButton(AUTO_SEARCH_SEQUENCE_BUTTON))
+    {
+        RobotCamera::SetFullProcessing(true);
+        RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
+
+        if (!RobotCamera::AutonomousCamera::IsTargetInView())
+        {
+            RobotCamera::AutonomousCamera::TargetSearch(0.35);
+        }
+        else
+        {
+            // .015 / .000115 / 3.8
+            RobotCamera::AutonomousCamera::BasePControl(.015, .000115, 4.0);
+        }
+
+        bSearchOrAimHappened = true;
+    }
+    else if (m_pDriveJoystick->GetRawButton(AUTO_AIM_SEQUENCE_BUTTON))
+    {        
+        SmartDashboard::PutBoolean("Auto Aim System Override", true);
+
+        RobotCamera::SetFullProcessing(true);
+        RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
+
+        // Practice Bot
+        // Base Line Values: 0.01 / 0.00015 / 2
+        // Aggressive: .02 / .00015 / 1.2
+        // Moderate: .015 / .000115 / 3.8
+        // Okay - .015 / .00015 / 4.0
+        RobotCamera::AutonomousCamera::BasePControl(.015, .00015, 4.0); // Code Run Slower at TeleOperated Mode, sum rate higher!
+
+        bSearchOrAimHappened = true;
+    }
+    else
+    {
+        SmartDashboard::PutBoolean("Auto Aim System Override", false);
+
+        RobotCamera::SetFullProcessing(false);
+        RobotCamera::SetLimelightMode(RobotCamera::DRIVER_CAMERA);
+    }
+
+    return bSearchOrAimHappened;
 }
 
 

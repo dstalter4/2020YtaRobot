@@ -6,7 +6,7 @@
 /// Implementation of the YtaRobot test functions.  This keeps official stable
 /// robot code isolated.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2020 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
@@ -16,6 +16,7 @@
 // (none)
 
 // C++ INCLUDES
+#include "RobotCamera.hpp"      // for autonomous camera test routine declarations
 #include "RobotUtils.hpp"       // for DisplayMessage(), DisplayFormattedMessage()
 #include "YtaRobot.hpp"         // for robot class declaration
 
@@ -306,5 +307,82 @@ void YtaRobot::LedsTest()
         }
 
         oldTime = currentTime;
+    }
+}
+
+
+
+// 2020 Camera test routines
+double RobotCamera::AutonomousCamera::m_Speed = 0.2;
+int RobotCamera::AutonomousCamera::m_Counter = 0;
+void RobotCamera::AutonomousCamera::Test()
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    m_Counter++;
+
+    if (m_Counter > 20000)
+    {           
+        m_Speed *= -1;        
+        m_Counter = 0;    
+    }
+    
+    SmartDashboard::PutNumber("Shooting Speed", m_Speed);
+    SmartDashboard::PutNumber("Shooting Speed Counter", m_Counter);
+    //pRobotObj->m_pShooterMotors->Set(speed);
+    pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, m_Speed);
+}
+
+
+
+void RobotCamera::AutonomousCamera::TestTurretControl()
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if (bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double turretSignal = 0.1;
+
+        if (targetX > 3)
+        {
+            turretSignal *= -1;
+        }
+        /*
+        else if (targetX < -3)
+        {
+            // This line is a nop
+            turretSignal *= 1;
+        }
+        */
+
+        pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, turretSignal);
+    }
+}
+
+
+
+void RobotCamera::AutonomousCamera::TestTurretPControl()
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if (bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double Kp = 0.1;
+
+        double error = 0 - targetX;
+        double signal = Kp * error;
+        signal = SignalLimiter(signal,0.3); 
+
+        SmartDashboard::PutNumber("Signal", signal);
+
+        pRobotObj->m_pTurretMotor->Set(ControlMode::PercentOutput, signal);
     }
 }

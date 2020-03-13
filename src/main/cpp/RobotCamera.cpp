@@ -15,7 +15,7 @@
 #include "cameraserver/CameraServer.h"          // for CameraServer instance
 #include "networktables/NetworkTable.h"         // for network tables
 #include "networktables/NetworkTableInstance.h" // for network table instance
-#include "YtaRobot.hpp"
+#include "math.h"                               // for std::abs
 
 // C++ INCLUDES
 #include "RobotCamera.hpp"                      // for class declaration
@@ -48,11 +48,161 @@ int                                             RobotCamera::m_HeartBeat;
 const char *                                    RobotCamera::CAMERA_OUTPUT_NAME = "Camera Output";
 double                                          RobotCamera::integSum = 0.0;
 
-<<<<<<< HEAD
-// YtaRobot * RobotCamera::m_pRobotObj = nullptr;
-=======
+
 Timer                                           RobotCamera::AutonomousCamera::m_AutoCameraTimer;
 double                                          RobotCamera::AutonomousCamera::m_IntegralSum = 0.0;
+int                                             RobotCamera::AutonomousCamera::m_TargetLockCounter = 0;
+bool                                            RobotCamera::AutonomousCamera::m_TargetInView = false;
+bool                                            RobotCamera::AutonomousCamera::m_TargetLock = false;
+
+
+void RobotCamera::AutonomousCamera::Reset()
+{
+    m_IntegralSum = 0;
+    m_TargetInView = false;
+    m_TargetLock = false;
+    m_TargetLockCounter = 0;
+    SmartDashboard::PutNumber("Integral Sum: ", m_IntegralSum);
+    
+}
+
+bool RobotCamera::AutonomousCamera::BasePControl(double Kp, double Ki, double sumRate)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    if (bTargetValid)
+    {        
+        double targetX = m_pLimelightNetworkTable->GetNumber("tx", 0.0);
+        double error = 0 - targetX;
+        double signal = (Kp * error) + (Ki * m_IntegralSum);
+
+        signal = SignalLimiter(signal, 0.5); 
+        signal = SignalCutOff(signal, .05);
+        signal = SignalLowerLimiter(signal, 0.1);
+        
+        SmartDashboard::PutNumber("Integral sum: ", m_IntegralSum);
+        SmartDashboard::PutNumber("Ki*sum", Ki * m_IntegralSum);
+        SmartDashboard::PutNumber("Signal", signal);
+        SmartDashboard::PutNumber("error", error);
+        SmartDashboard::PutNumber("Target Lock Counter", m_TargetLockCounter);
+
+        m_IntegralSum += sumRate * error;
+        m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+
+        if (std::abs(error) < 0.3)
+        {
+            //m_IntegralSum = SignalLimiter(m_IntegralSum, 1000);
+            pRobotObj->m_pLeftDriveMotors->Set(0);
+            pRobotObj->m_pRightDriveMotors->Set(0);
+
+            m_TargetLockCounter++;
+
+            // Determine Lock if Stable for 500 Counts
+            if (m_TargetLockCounter > 500)
+            {
+                m_TargetLock = true;
+                return true;
+            }
+            else
+            {
+                m_TargetLock = false;
+                return false;
+            }
+        }
+        else
+        { 
+            m_TargetLockCounter = 0;           
+            pRobotObj->m_pLeftDriveMotors->Set(-signal);
+            pRobotObj->m_pRightDriveMotors->Set(-signal); //practice bot flip
+            m_TargetLock = false;
+            return false;
+        }
+    }
+    else
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);
+        m_TargetLock = false;
+        return false;
+    }
+}
+
+bool RobotCamera::AutonomousCamera::TargetSearch(double searchSpeed)
+{
+    YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
+
+    // 1 = target in view, 0 = target not in view
+    bool bTargetValid = static_cast<bool>(static_cast<int>(m_pLimelightNetworkTable->GetNumber("tv", 0.0)));
+
+    m_TargetInView = bTargetValid;
+
+    if (!bTargetValid)
+    {
+        pRobotObj->m_pLeftDriveMotors->Set(searchSpeed);
+        pRobotObj->m_pRightDriveMotors->Set(searchSpeed);
+        return false;
+    }
+    else
+    {      
+        pRobotObj->m_pLeftDriveMotors->Set(0);
+        pRobotObj->m_pRightDriveMotors->Set(0);  
+        return true;
+    }
+}
+
+double RobotCamera::AutonomousCamera::SignalLowerLimiter(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+
+    if ((signal < limit) && (signal > 0))
+    {
+        signal = limit;
+    }
+    else if ((signal > -limit) && (signal < 0))
+    {
+        signal = -limit;
+    }
+    else
+    {
+    }
+    
+    return signal;
+}
+
+double RobotCamera::AutonomousCamera::SignalLimiter(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+    
+    if (signal > limit)
+    {
+        signal = limit;
+    }
+    else if (signal < -limit)
+    {
+        signal = -limit;
+    }
+    else
+    {
+    }
+
+    return signal;
+}
+
+double RobotCamera::AutonomousCamera::SignalCutOff(double signal, double limit)
+{
+    // @todo: Use RobotUtils::Limit(), if possible
+    
+    if ((signal < limit) && (signal > -limit))
+    {
+        signal = 0;
+    }
+
+    return signal;
+}
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -172,7 +322,6 @@ bool RobotCamera::AutonomousCamera::AlignToTarget(SeekDirection seekDirection, c
 }
 
 
->>>>>>> master
 
 ////////////////////////////////////////////////////////////////
 /// @method RobotCamera::UsbCameraInfo::UsbCameraInfo
@@ -245,111 +394,16 @@ void RobotCamera::LimelightThread()
     RobotUtils::DisplayMessage("Limelight vision thread detached.");
     
     // Get the limelight network table
-<<<<<<< HEAD
-    m_LimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-=======
     while (m_pLimelightNetworkTable == nullptr)
     {
         m_pLimelightNetworkTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
     }
->>>>>>> master
+
     
     // The limelight camera mode will be set by autonomous or teleop
-    
     while (true)
     {
-<<<<<<< HEAD
-        // Reference: http://docs.limelightvision.io/en/latest/getting_started.html#basic-programming
-        std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-        double targetX = table->GetNumber("tx",0.0);
-        double targetY = table->GetNumber("ty",0.0);
-        double targetArea = table->GetNumber("ta",0.0);
-        double targetSkew = table->GetNumber("ts",0.0);
-        double targetValid = table->GetNumber("tv",0.0); //1==target in view
-        
 
-        // Just to silence warnings
-        (void)targetX;
-        (void)targetY;
-        (void)targetArea;
-        (void)targetSkew;
-        (void)targetValid;
-
-
-        // Reference: http://docs.limelightvision.io/en/latest/cs_seeking.html
-        double steering_adjust = 0.0;
-        // double Kp = 0.05; //oscillates old robot
-        double left_command=0.0, right_command=0.0;
-        if (targetValid == 0.0)
-        {
-            steering_adjust = 0.2; //No target - rotate to find target
-            integSum = 0.0;
-        }
-        else
-        {
-            // We do see the target, execute aiming code
-            double heading_error = targetX;
-            // steering_adjust = Kp * targetX; //Proportional controller
-            integSum += heading_error;// (heading_error+last_heading_error);
-
-            double limitAbsVal = 10000;
-
-            if(integSum > limitAbsVal){
-                integSum = limitAbsVal;
-            }
-            if(integSum < -limitAbsVal){
-                integSum = -limitAbsVal;
-            }
-
-            steering_adjust = Kp*targetX + Ki*integSum; //Proportional-Integral controller
-
-            //remmember to limit the integration term
-            //reset the integration term when target is out of the frame
-
-
-        // // left_command+=steering_adjust;
-        // // right_command-=steering_adjust;
-
-        }
-
-
-        left_command-=steering_adjust;
-        right_command+=steering_adjust;
-
-
-        ////min speed 0.25
-        ////max 0.5
-        //hardcoding motor commands to test the motor controllers and direction
-        // left_command=0.5;
-        // right_command=0.5;
-
-//stay above 0.2 commands (new falcon motors might be better)
-
-
-
-        YtaRobot * pRobotObj = YtaRobot::GetRobotInstance();
-        // Set motor speed
-        if (pRobotObj != nullptr)
-        {
-            if (pRobotObj->m_pDriverStation->IsEnabled())
-            {
-                //these are the motor commands that go to the YtaRobot.cpp class object
-
-                pRobotObj->m_pLeftDriveMotors->Set(-left_command);
-                pRobotObj->m_pRightDriveMotors->Set(right_command);
-            }
-        }
-
-
-        
-        // @todo: Send useful information to smart dashboard.
-        // SmartDashboard::PutNumber("Color sensor IR distance", irDistance);
-        SmartDashboard::PutNumber("steering_adjust", steering_adjust);
-        SmartDashboard::PutNumber("targetX", targetX);
-        SmartDashboard::PutNumber("integSum", integSum);
-        
-=======
->>>>>>> master
     }
 }
 

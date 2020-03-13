@@ -238,6 +238,9 @@ private:
     // Get a throttle control value from a joystick
     inline double GetThrottleControl(Joystick * pJoystick);
     inline double GetThrottleControl(YtaController * pController);
+
+    // Function to automate and searching for and aiming at a target
+    bool SearchAndAim();
     
     // Function to automate slightly moving the robot
     bool DirectionalInch();
@@ -400,7 +403,7 @@ private:
     static const ControllerType     DRIVE_CONTROLLER_TYPE                   = CUSTOM_CONTROLLER;
     static const ControllerType     CONTROL_CONTROLLER_TYPE                 = CUSTOM_CONTROLLER;
     static const CustomControllerType DRIVE_CUSTOM_CONTROLLER_TYPE          = YtaController::PLAY_STATION;
-    static const CustomControllerType CONTROL_CUSTOM_CONTROLLER_TYPE        = YtaController::LOGITECH;
+    static const CustomControllerType CONTROL_CUSTOM_CONTROLLER_TYPE        = YtaController::PLAY_STATION;
     static constexpr const ControllerMappings * const DRIVE_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE);
     static constexpr const ControllerMappings * const CONTROL_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(CONTROL_CUSTOM_CONTROLLER_TYPE);
     
@@ -412,6 +415,8 @@ private:
     static const int                DRIVE_SLOW_Y_AXIS                       = DRIVE_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.RIGHT_Y_AXIS;
     static const int                HANG_RAISE_SOLENOID_CHANGE_STATE_BUTTON = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
     static const int                HANG_EXT_SOLENOID_CHANGE_STATE_BUTTON   = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUTTON;
+    static const int                AUTO_AIM_SEQUENCE_BUTTON                = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON;
+    static const int                AUTO_SEARCH_SEQUENCE_BUTTON             = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUTTON;
     static const int                WINCH_FORWARD_BUTTON                    = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUMPER;
     static const int                WINCH_REVERSE_BUTTON                    = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUMPER;
     static const int                CAMERA_TOGGLE_FULL_PROCESSING_BUTTON    = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 11 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.SELECT;
@@ -492,6 +497,7 @@ private:
     static const int                QUADRATURE_ENCODING_ROTATIONS           = 4096;
     static const char               NULL_CHARACTER                          = '\0';
     
+    static const bool               SEARCH_AND_AIM_ENABLED                  = true;
     static const bool               USE_INVERTED_REVERSE_CONTROLS           = true;
     static const bool               SLOW_DRIVE_ENABLED                      = false;
     static const bool               DIRECTIONAL_ALIGN_ENABLED               = false;
@@ -582,8 +588,8 @@ private:
     
     static constexpr double         TURRET_MOTOR_SCALING_VALUE              = -0.50;
     static constexpr double         INTAKE_MOTOR_SPEED                      =  1.00;
-    static constexpr double         SHOOTER_SLOW_MOTOR_SPEED                =  0.75;
-    static constexpr double         SHOOTER_FAST_MOTOR_SPEED                =  0.85;
+    static constexpr double         SHOOTER_SLOW_MOTOR_SPEED                =  0.85;
+    static constexpr double         SHOOTER_FAST_MOTOR_SPEED                =  1.00;
     static constexpr double         WINCH_MOTOR_SPEED                       =  1.00;
 
     static constexpr double         JOYSTICK_TRIM_UPPER_LIMIT               =  0.10;
