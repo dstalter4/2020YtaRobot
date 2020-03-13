@@ -113,8 +113,8 @@ bool RobotCamera::AutonomousCamera::BasePControl(double Kp, double Ki, double su
         else
         { 
             m_TargetLockCounter = 0;           
-            pRobotObj->m_pLeftDriveMotors->Set(-signal);
-            pRobotObj->m_pRightDriveMotors->Set(-signal); //practice bot flip
+            pRobotObj->m_pLeftDriveMotors->Set(YtaRobot::LEFT_DRIVE_REVERSE_SCALAR * signal);
+            pRobotObj->m_pRightDriveMotors->Set(YtaRobot::RIGHT_DRIVE_FORWARD_SCALAR * signal); //practice bot flip
             m_TargetLock = false;
             return false;
         }

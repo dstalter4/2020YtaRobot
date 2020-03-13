@@ -30,7 +30,6 @@
 ////////////////////////////////////////////////////////////////
 void YtaRobot::AutonomousRoutine1()
 {
-    //AutonomousDriveSequence(ROBOT_REVERSE, 0.25, 1.0);
     //RobotCamera::AutonomousCamera::AlignToTarget(RobotCamera::AutonomousCamera::SEEK_LEFT);
 
     /*
@@ -54,36 +53,8 @@ void YtaRobot::AutonomousRoutine1()
     RobotCamera::SetFullProcessing(true);
     RobotCamera::SetLimelightMode(RobotCamera::VISION_PROCESSOR);
 
-    // This loop shouldn't be needed
-    /*
-    while ( !m_pDriverStation->IsAutonomous() || !m_pDriverStation->IsEnabled() )
-    {
-    }
-    */
-
-    // If a timer is needed, use m_pAutonomousTimer.
-    // Calling new without delete is a resource leak.
-    //m_pAutonomousTimer->Start();
-
     // Back Up Sequence
-    // This needs to call AutonomousDriveSequence() instead of using a loop
-    for (int i = 0; i < 50000; i++)
-    {
-        if (m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
-        {                    
-            m_pLeftDriveMotors->Set(-0.2);
-            m_pRightDriveMotors->Set(0.2);
-        }
-        else
-        {
-            m_pLeftDriveMotors->Set(0);
-            m_pRightDriveMotors->Set(0);
-            return;
-        }
-
-        //SmartDashboard::PutNumber("Auto 1 Backward Count", i);
-        //SmartDashboard::PutNumber("Time", m_pAutonomousTimer->Get());
-    }
+    AutonomousDriveSequence(ROBOT_REVERSE, 0.25, 1.0);
     
     m_pLeftDriveMotors->Set(0);
     m_pRightDriveMotors->Set(0);
@@ -128,7 +99,9 @@ void YtaRobot::AutonomousRoutine1()
     // Enable Firing Motor
     m_pShooterMotors->Set(-1.0);
 
-    for (int i = 0; i < 100000; i++)
+    // Time the shots
+    m_pAutonomousTimer->Start();
+    while (m_pAutonomousTimer->Get() < 5.0)
     {
         if (m_pDriverStation->IsAutonomous() && m_pDriverStation->IsEnabled())
         {  
@@ -142,6 +115,8 @@ void YtaRobot::AutonomousRoutine1()
             return;
         }
     }
+    m_pAutonomousTimer->Stop();
+    m_pAutonomousTimer->Reset();
 
     // Autonomous Sequence Completed
     m_pShooterMotors->Set(0);
@@ -200,9 +175,6 @@ void YtaRobot::AutonomousRoutine1()
         }
     }
     */
-
-    //m_pAutonomousTimer->Stop();
-    //m_pAutonomousTimer->Reset();
     
     // Returning from here will enter the idle state until autonomous is over
     RobotUtils::DisplayMessage("Auto routine 1 done.");
