@@ -364,7 +364,7 @@ void YtaRobot::TeleopPeriodic()
 
     IntakeSequence();
 
-    TurretSequence();
+    //TurretSequence();
 
     ShooterSequence();
 
