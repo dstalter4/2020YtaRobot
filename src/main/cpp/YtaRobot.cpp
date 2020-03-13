@@ -1010,6 +1010,14 @@ void YtaRobot::DriveControlSequence()
 bool YtaRobot::SearchAndAim()
 {
     // @todo: Add a safety timer to these operations so they don't operate indefinitely!
+    static bool bFirst = true;
+    if (bFirst)
+    {
+        SmartDashboard::PutNumber("kp", 0.0);
+        SmartDashboard::PutNumber("ki", 0.0);
+        SmartDashboard::PutNumber("accum", 0.0);
+        bFirst = false;
+    }
 
     bool bSearchOrAimHappened = false;
 
@@ -1031,7 +1039,16 @@ bool YtaRobot::SearchAndAim()
         else
         {
             // .015 / .000115 / 3.8
-            RobotCamera::AutonomousCamera::BasePControl(.015, .000115, 4.0);
+            // RobotCamera::AutonomousCamera::BasePControl(.010, .000115, 4.0);
+
+            static double kp = 0.0;
+            static double ki = 0.0;
+            static double accum = 0.0;
+            SmartDashboard::GetNumber("kp", kp);
+            SmartDashboard::GetNumber("ki", ki);
+            SmartDashboard::GetNumber("accum", accum);
+            RobotCamera::AutonomousCamera::BasePControl(kp, ki, accum);
+            //RobotCamera::AutonomousCamera::BasePControl(.005, 0.000, 0.0);
         }
 
         bSearchOrAimHappened = true;
