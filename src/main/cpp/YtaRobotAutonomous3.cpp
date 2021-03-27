@@ -5,7 +5,7 @@
 /// @details
 /// Implementation of autonomous routine 3 for YtaRobot.
 ///
-/// Copyright (c) 2019 Youth Technology Academy
+/// Copyright (c) 2021 Youth Technology Academy
 ////////////////////////////////////////////////////////////////////////////////
 
 // SYSTEM INCLUDES
