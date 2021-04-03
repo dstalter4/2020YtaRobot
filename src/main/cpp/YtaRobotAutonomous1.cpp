@@ -40,29 +40,32 @@ void YtaRobot::AutonomousRoutine1()
     
     // First 'S' turn
     AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 1.30, true, 0.0, (0.15 * RIGHT_DRIVE_FORWARD_SCALAR));
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.90, true, (0.15 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 1.0, true, (0.15 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
 
     // Straight away (Normal/low batter: 1.1, Fresh battery: 1.0)
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.4, 1.25);
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.4, 1.05);
 
     // Second 'S' turn into loop
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.70, true, (0.20 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.70, true, (0.21 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
     AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.60, true, 0.0, (0.20 * RIGHT_DRIVE_FORWARD_SCALAR));
 
     // Loop
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 2.2, true, 0.0, (0.20 * RIGHT_DRIVE_FORWARD_SCALAR));
-    return;
-
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 2.10, true, 0.0, (0.20 * RIGHT_DRIVE_FORWARD_SCALAR));
+    
+    // This will cause any lines below it to not execute and stop the autonomous run
+    // It can be moved anywhere in this function to stop autonomous at different points
+    
     // First 'S' turn back
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.7, true, 0.0, (0.15 * RIGHT_DRIVE_FORWARD_SCALAR));
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.9, true, (0.15 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
-
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.75, true, 0.0, (0.15 * RIGHT_DRIVE_FORWARD_SCALAR));
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 1.05, true, (0.17 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
+    
     // Straight away
     AutonomousDriveSequence(ROBOT_FORWARD, 0.4, 1.1);
 
     // Last 'S' turn
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.7, true, (0.20 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
-    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 1.2, true, 0.0, (0.15 * RIGHT_DRIVE_FORWARD_SCALAR));
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 1.05, true, (0.15 * LEFT_DRIVE_FORWARD_SCALAR), 0.0);
+    AutonomousDriveSequence(ROBOT_FORWARD, 0.20, 0.8, true, 0.0, (0.14 * RIGHT_DRIVE_FORWARD_SCALAR));
+    return;
 
     // Park
     AutonomousDriveSequence(ROBOT_FORWARD, 0.15, 1.25);
