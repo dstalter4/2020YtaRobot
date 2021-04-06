@@ -400,7 +400,7 @@ private:
     static const ControllerType     DRIVE_CONTROLLER_TYPE                   = CUSTOM_CONTROLLER;
     static const ControllerType     CONTROL_CONTROLLER_TYPE                 = CUSTOM_CONTROLLER;
     static const CustomControllerType DRIVE_CUSTOM_CONTROLLER_TYPE          = YtaController::PLAY_STATION;
-    static const CustomControllerType CONTROL_CUSTOM_CONTROLLER_TYPE        = YtaController::LOGITECH;
+    static const CustomControllerType CONTROL_CUSTOM_CONTROLLER_TYPE        = YtaController::PLAY_STATION;
     static constexpr const ControllerMappings * const DRIVE_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(DRIVE_CUSTOM_CONTROLLER_TYPE);
     static constexpr const ControllerMappings * const CONTROL_CONTROLLER_MAPPINGS = YtaController::GetControllerMapping(CONTROL_CUSTOM_CONTROLLER_TYPE);
     
@@ -422,8 +422,8 @@ private:
     static const int                DRIVE_CONTROLS_REVERSE_BUTTON           = (DRIVE_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 16 : DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     static const int                DRIVE_CONTROLS_INCH_FORWARD_BUTTON      = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
     static const int                DRIVE_CONTROLS_INCH_BACKWARD_BUTTON     = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
-    static const int                DRIVE_CONTROLS_INCH_LEFT_BUTTON         = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
-    static const int                DRIVE_CONTROLS_INCH_RIGHT_BUTTON        = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
+    static const int                DRIVE_CONTROLS_INCH_LEFT_BUTTON         = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
+    static const int                DRIVE_CONTROLS_INCH_RIGHT_BUTTON        = DRIVE_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUTTON;
     
     // Control buttons
     static const int                TURRET_CONTROL_AXIS                     = CONTROL_CONTROLLER_MAPPINGS->AXIS_MAPPINGS.LEFT_X_AXIS;
@@ -495,7 +495,7 @@ private:
     static const bool               USE_INVERTED_REVERSE_CONTROLS           = true;
     static const bool               SLOW_DRIVE_ENABLED                      = false;
     static const bool               DIRECTIONAL_ALIGN_ENABLED               = false;
-    static const bool               DIRECTIONAL_INCH_ENABLED                = false;
+    static const bool               DIRECTIONAL_INCH_ENABLED                = true;
     static const bool               ADXRS450_GYRO_PRESENT                   = false;
     
     static const unsigned           CAMERA_RUN_INTERVAL_MS                  = 1000U;
@@ -596,7 +596,7 @@ private:
     static constexpr double         DRIVE_MOTOR_UPPER_LIMIT                 =  1.00;
     static constexpr double         DRIVE_MOTOR_LOWER_LIMIT                 = -1.00;
     static constexpr double         DRIVE_WHEEL_DIAMETER_INCHES             =  6.00;
-    static constexpr double         INCHING_DRIVE_SPEED                     =  0.25;
+    static constexpr double         INCHING_DRIVE_SPEED                     =  0.10;
     static constexpr double         INCHING_DRIVE_DELAY_S                   =  0.10;
     static constexpr double         DIRECTIONAL_ALIGN_DRIVE_SPEED           =  0.55;
     static constexpr double         DIRECTIONAL_ALIGN_MAX_TIME_S            =  3.00;

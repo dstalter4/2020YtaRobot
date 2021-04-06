@@ -81,7 +81,7 @@ YtaRobot::YtaRobot() :
     m_SerialPortBuffer                  (),
     m_pSerialPort                       (new SerialPort(SERIAL_PORT_BAUD_RATE, SerialPort::kMXP, SERIAL_PORT_NUM_DATA_BITS, SerialPort::kParity_None, SerialPort::kStopBits_One)),
     m_I2cThread                         (RobotI2c::I2cThread),
-    m_pColorSensor                      (new rev::ColorSensorV3(I2C::Port::kOnboard)),
+    m_pColorSensor                      (nullptr),
     m_pColorMatcher                     (new rev::ColorMatch()),
     m_RobotMode                         (ROBOT_MODE_NOT_SET),
     m_RobotDriveState                   (MANUAL_CONTROL),
@@ -401,7 +401,7 @@ void YtaRobot::IntakeSequence()
     }
     else if (m_pControlJoystick->GetRawButton(INTAKE_REVERSE_BUTTON))
     {
-        intakeMotorSpeed = -INTAKE_MOTOR_SPEED;
+        intakeMotorSpeed = -INTAKE_MOTOR_SPEED / 2.0;
     }
     else
     {
@@ -1000,6 +1000,7 @@ bool YtaRobot::DirectionalInch()
     double leftSpeed = 0.0;
     double rightSpeed = 0.0;
 
+    /*
     if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_FORWARD_BUTTON))
     {
         leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_FORWARD_SCALAR;
@@ -1010,7 +1011,7 @@ bool YtaRobot::DirectionalInch()
         leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_REVERSE_SCALAR;
         rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_REVERSE_SCALAR;
     }
-    else if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_LEFT_BUTTON))
+    else*/ if (m_pDriveJoystick->GetRawButton(DRIVE_CONTROLS_INCH_LEFT_BUTTON))
     {
         leftSpeed = INCHING_DRIVE_SPEED * LEFT_DRIVE_REVERSE_SCALAR;
         rightSpeed = INCHING_DRIVE_SPEED * RIGHT_DRIVE_FORWARD_SCALAR;
@@ -1278,6 +1279,8 @@ void YtaRobot::DisabledInit()
     // All motors off
     m_pLeftDriveMotors->Set(OFF);
     m_pRightDriveMotors->Set(OFF);
+    m_pLeftDriveMotors->SetCoastMode();
+    m_pRightDriveMotors->SetCoastMode();
     
     // Even though 'Disable' shuts off the relay signals, explitily turn the LEDs off
     m_pLedsEnableRelay->Set(LEDS_DISABLED);
