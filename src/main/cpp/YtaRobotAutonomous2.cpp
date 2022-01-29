@@ -29,6 +29,8 @@
 ////////////////////////////////////////////////////////////////
 void YtaRobot::AutonomousRoutine2()
 {
+    return;
+    
     // Go forward
     AutonomousDriveSequence(ROBOT_FORWARD, 0.30, 1.75);
 

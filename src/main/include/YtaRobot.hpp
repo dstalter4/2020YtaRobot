@@ -431,8 +431,10 @@ private:
     static const int                SHOOTER_SOLENOID_CHANGE_STATE_BUTTON    = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON;
     static const int                INTAKE_FORWARD_BUTTON                   = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUMPER;
     static const int                INTAKE_REVERSE_BUTTON                   = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUMPER;
-    static const int                SHOOTER_SLOW_BUTTON                     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUTTON;
-    static const int                SHOOTER_FAST_BUTTON                     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
+    static const int                SHOOTER_MAX_BUTTON                      = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.LEFT_BUTTON;
+    static const int                SHOOTER_HIGH_BUTTON                     = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.DOWN_BUTTON;
+    static const int                SHOOTER_MID_BUTTON                      = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.RIGHT_BUTTON;
+    static const int                SHOOTER_LOW_BUTTON                      = CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.UP_BUTTON;
     static const int                ESTOP_BUTTON                            = (CONTROL_CONTROLLER_TYPE == LOGITECH_EXTREME) ? 14 :  CONTROL_CONTROLLER_MAPPINGS->BUTTON_MAPPINGS.NO_BUTTON;
 
     // CAN Signals

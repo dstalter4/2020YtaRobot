@@ -464,15 +464,29 @@ void YtaRobot::ShooterSequence()
 {
     double shooterMotorSpeed = 0.0;
     
-    if (m_pControlJoystick->GetRawButton(SHOOTER_FAST_BUTTON))
+    if (m_pControlJoystick->GetRawButton(SHOOTER_MAX_BUTTON))
     {
+        // This is zone 2 (yellow, square button)
         // Negative motor value spins in the desired direction
-        shooterMotorSpeed = -SHOOTER_FAST_MOTOR_SPEED;
+        shooterMotorSpeed = -0.90;//-SHOOTER_FAST_MOTOR_SPEED;
     }
-    else if (m_pControlJoystick->GetRawButton(SHOOTER_SLOW_BUTTON))
+    else if (m_pControlJoystick->GetRawButton(SHOOTER_HIGH_BUTTON))
     {
+        // This is zone 3 (blue, x button)
         // Negative motor value spins in the desired direction
-        shooterMotorSpeed = -SHOOTER_SLOW_MOTOR_SPEED;
+        shooterMotorSpeed = -0.80;//-SHOOTER_SLOW_MOTOR_SPEED;
+    }
+    else if (m_pControlJoystick->GetRawButton(SHOOTER_MID_BUTTON))
+    {
+        // This is zone 4 (red, circle button)
+        // Negative motor value spins in the desired direction
+        shooterMotorSpeed = -0.86;
+    }
+    else if (m_pControlJoystick->GetRawButton(SHOOTER_LOW_BUTTON))
+    {
+        // This is zone 1 (green, triangle button)
+        // Negative motor value spins in the desired direction
+        shooterMotorSpeed = -0.15;
     }
     else
     {

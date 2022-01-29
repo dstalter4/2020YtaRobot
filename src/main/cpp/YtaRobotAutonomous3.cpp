@@ -29,6 +29,8 @@
 ////////////////////////////////////////////////////////////////
 void YtaRobot::AutonomousRoutine3()
 {
+    return;
+    
     // 12.7 battery, turn .95s @ 20% is about 90 degrees
 
     // Get to and knock down the first marker

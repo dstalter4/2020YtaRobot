@@ -29,6 +29,8 @@
 ////////////////////////////////////////////////////////////////
 void YtaRobot::AutonomousRoutine1()
 {
+    return;
+    
     // Parameters:
     // 1. Direction (ROBOT_FORWARD)
     // 2. Forward speed for both motors 0.0 -> 1.0

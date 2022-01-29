@@ -86,24 +86,24 @@ void YtaRobot::AutonomousPeriodic()
     std::string selectedAutoRoutineString = m_AutonomousChooser.GetSelected();
     
     // Auto routine 1
-    //if ( YtaRobotAutonomous::ROUTINE_1 )
-    if (selectedAutoRoutineString == AUTO_ROUTINE_1_STRING)
+    if ( YtaRobotAutonomous::ROUTINE_1 )
+    //if (selectedAutoRoutineString == AUTO_ROUTINE_1_STRING)
     {
         RobotUtils::DisplayMessage("Auto routine 1.");
         AutonomousRoutine1();
     }
     
     // Auto routine 2
-    //else if ( YtaRobotAutonomous::ROUTINE_2 )
-    else if (selectedAutoRoutineString == AUTO_ROUTINE_2_STRING)
+    else if ( YtaRobotAutonomous::ROUTINE_2 )
+    //else if (selectedAutoRoutineString == AUTO_ROUTINE_2_STRING)
     {
         RobotUtils::DisplayMessage("Auto routine 2.");
         AutonomousRoutine2();
     }
     
     // Auto routine 3
-    //else if ( YtaRobotAutonomous::ROUTINE_3 )
-    else if (selectedAutoRoutineString == AUTO_ROUTINE_3_STRING)
+    else if ( YtaRobotAutonomous::ROUTINE_3 )
+    //else if (selectedAutoRoutineString == AUTO_ROUTINE_3_STRING)
     {
         RobotUtils::DisplayMessage("Auto routine 3.");
         AutonomousRoutine3();
